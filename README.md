@@ -20,7 +20,7 @@ Vortex ofrece 4 tipos de macros potentes para cubrir todas tus necesidades:
     *   **Timing Preciso**: Reproduce tus macros con la misma velocidad y ritmo con la que las grabaste.
 *   **🖱️ Auto-Clicker**: Automatiza clics del ratón con intervalos personalizados.
 
-![Configuración de Macro](file:///c:/Users/Cuervo/.gemini/antigravity/brain/6e1a812b-5109-4d4e-8081-689aa8df1b02/vortex_config_ui_1765545576233.png)
+![Configuración de Macro](assets/settings.png)
 
 ### 🎨 Diseño Premium
 *   **Tema Adaptable**: Interfaz que respeta tu preferencia de tema (Claro/Oscuro), con un diseño Glassmorphism moderno.
