@@ -23,5 +23,30 @@
     "electron-squirrel-startup": "^1.0.1",
     "electron-store": "^8.1.0",
     "node-hid": "^3.2.0"
+  },
+  "build": {
+    "appId": "com.crow6093.vortexmacro",
+    "productName": "Vortex Macro V2",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Vortex Macro V2",
+      "license": "LICENSE.txt",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico"
+    }
   }
 }
