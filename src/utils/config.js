@@ -10,6 +10,10 @@ const schema = {
         type: 'string',
         default: 'dark'
     },
+    language: {
+        type: 'string',
+        default: 'en'
+    },
     profiles: {
         type: 'array',
         default: []

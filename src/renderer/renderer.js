@@ -19,12 +19,146 @@ const saveBtn = document.getElementById('save-macro-btn');
 // Initialize Config
 ipcRenderer.on('init-config', (event, config) => {
     currentMacros = config.macros || {};
+    const language = config.language || 'en';
     const theme = config.theme || 'dark';
     document.body.setAttribute('data-theme', theme);
     const themeSelector = document.getElementById('theme-selector-floating');
     if (themeSelector) themeSelector.value = theme;
+    changeLanguage(language);
     updateKeyVisuals();
     checkEmptyState();
+});
+
+const textDictionary = {
+    es: {
+        settingsTitle: "Configuración",
+        appearance: "Apariencia",
+        theme: "Tema",
+        language: "Idioma",
+        system: "Sistema",
+        autoLaunch: "Inicio automático",
+        profiles: "Perfiles",
+        export: "Exportar",
+        import: "Importar",
+        assignMacro: "Asignar Macro",
+        clickToStart: "¡Haz clic en una tecla para empezar!",
+        connectDevice: "Conecta El Vortex V2.0 para Continuar",
+        save: "Guardar",
+        loading: "Cargando...",
+        customApp: "Aplicación Personalizada...",
+        selectProgram: "Seleccionar Programa",
+        orCustomPath: "O Ruta Personalizada",
+        browse: "Explorar",
+        clicks: "Clics",
+        delay: "Retraso (ms)",
+        record: "Grabar",
+        stop: "Parar",
+        clearSequence: "Borrar Secuencia",
+        keysRecorded: "teclas grabadas",
+        recording: "Grabando... (Pulsa teclas)",
+        macroNone: "Sin Acción",
+        macroWeb: "Búsqueda Web",
+        macroLaunch: "Abrir Programa",
+        macroClicker: "Auto Clicker",
+        macroRecorder: "Grabar Teclas"
+    },
+    en: {
+        settingsTitle: "Settings",
+        appearance: "Appearance",
+        theme: "Theme",
+        language: "Language",
+        system: "System",
+        autoLaunch: "Auto-launch",
+        profiles: "Profiles",
+        export: "Export",
+        import: "Import",
+        assignMacro: "Assign Macro",
+        clickToStart: "Click a key to start!",
+        connectDevice: "Connect Vortex V2.0 to Continue",
+        save: "Save",
+        loading: "Loading...",
+        customApp: "Custom Application...",
+        selectProgram: "Select Program",
+        orCustomPath: "Or Custom Path",
+        browse: "Browse",
+        clicks: "Clicks",
+        delay: "Delay (ms)",
+        record: "Record",
+        stop: "Stop",
+        clearSequence: "Clear Sequence",
+        keysRecorded: "keys recorded",
+        recording: "Recording... (Press keys)",
+        macroNone: "No Action",
+        macroWeb: "Web Search",
+        macroLaunch: "Open Program",
+        macroClicker: "Auto Clicker",
+        macroRecorder: "Record Keys"
+    }
+};
+
+let currentLanguage = 'en';
+
+function changeLanguage(lang) {
+    currentLanguage = lang;
+    const texts = textDictionary[lang];
+
+    // Update simple text elements
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        if (texts[key]) el.textContent = texts[key];
+    });
+
+    // Update specific elements with placeholders or complex logic
+    const instructionBubble = document.getElementById('instruction-bubble');
+    if (instructionBubble) instructionBubble.textContent = texts.clickToStart;
+
+    const connectTitle = document.querySelector('#disconnected-overlay h2');
+    if (connectTitle) connectTitle.textContent = texts.connectDevice;
+
+    const saveBtn = document.getElementById('save-macro-btn');
+    if (saveBtn) saveBtn.textContent = texts.save;
+
+    // Update Macro Types Dropdown
+    const macroSelect = document.getElementById('macro-type');
+    if (macroSelect) {
+        // We can access options by value or index
+        const options = macroSelect.options;
+        for (let i = 0; i < options.length; i++) {
+            const opt = options[i];
+            if (opt.value === 'none') opt.text = texts.macroNone;
+            if (opt.value === 'web') opt.text = texts.macroWeb;
+            if (opt.value === 'launch') opt.text = texts.macroLaunch;
+            if (opt.value === 'clicker') opt.text = texts.macroClicker;
+            if (opt.value === 'recorder') opt.text = texts.macroRecorder;
+        }
+    }
+
+    // Update active flag visual
+    document.querySelectorAll('.flag-btn').forEach(btn => {
+        if (btn.dataset.lang === lang) {
+            btn.style.filter = 'grayscale(0)';
+            btn.style.transform = 'scale(1.2)';
+        } else {
+            btn.style.filter = 'grayscale(1)';
+            btn.style.transform = 'scale(1)';
+        }
+    });
+
+    // Re-render macro settings if open to update labels
+    if (configPanel.classList.contains('open') && selectedKey) {
+        const type = macroTypeSelect.value;
+        const macro = currentMacros[selectedKey] || {};
+        renderMacroSettings(type, macro);
+    }
+}
+
+// Language Flag Listeners
+document.querySelectorAll('.flag-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const lang = btn.dataset.lang;
+        changeLanguage(lang);
+        ipcRenderer.send('save-language', lang);
+    });
 });
 
 const macroIcons = {
@@ -95,7 +229,7 @@ function updateToggleVisibility(type) {
 
 function openConfigPanel(key, triggerElement) {
     configPanel.classList.add('open');
-    selectedKeyDisplay.innerText = 'Asignar Macro';
+    selectedKeyDisplay.innerText = textDictionary[currentLanguage].assignMacro;
 
     // reset/fill
     const macro = currentMacros[key];
@@ -116,7 +250,7 @@ function closePanel() {
     configPanel.classList.remove('open');
     keys.forEach(k => k.classList.remove('active'));
     selectedKey = null;
-    if (selectedKeyDisplay) selectedKeyDisplay.innerText = 'Asignar Macro';
+    if (selectedKeyDisplay) selectedKeyDisplay.innerText = textDictionary[currentLanguage].assignMacro;
 }
 
 document.getElementById('close-panel').addEventListener('click', closePanel);
@@ -136,14 +270,14 @@ async function renderMacroSettings(type, existingData = {}) {
     } else if (type === 'launch') {
         container.innerHTML = `
             <div class="input-group">
-                <label>Select Program</label>
+                <label>${textDictionary[currentLanguage].selectProgram}</label>
                 <select id="program-select" style="margin-bottom: 10px; width: 100%; padding: 8px; border-radius: 6px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border);">
-                    <option value="">Loading...</option>
+                    <option value="">${textDictionary[currentLanguage].loading}</option>
                 </select>
-                <label>Or Custom Path</label>
+                <label>${textDictionary[currentLanguage].orCustomPath}</label>
                 <div class="file-input-wrapper">
                     <input type="text" id="macro-path" value="${existingData.path || ''}" placeholder="C:/...">
-                    <button class="secondary-btn" id="browse-btn">Browse</button>
+                    <button class="secondary-btn" id="browse-btn">${textDictionary[currentLanguage].browse}</button>
                 </div>
             </div>`;
 
@@ -151,7 +285,7 @@ async function renderMacroSettings(type, existingData = {}) {
         const programs = await ipcRenderer.invoke('get-installed-programs');
         const select = document.getElementById('program-select');
         if (select) {
-            select.innerHTML = `<option value="custom">Custom Application...</option>`;
+            select.innerHTML = `<option value="custom">${textDictionary[currentLanguage].customApp}</option>`;
 
             programs.forEach(prog => {
                 const opt = document.createElement('option');
@@ -192,20 +326,20 @@ async function renderMacroSettings(type, existingData = {}) {
 
     } else if (type === 'clicker') {
         container.innerHTML = `
-            <div class="input-group"><label>Clicks</label><input type="number" id="macro-clicks" value="${existingData.clicks || 1}"></div>
-            <div class="input-group"><label>Delay (ms)</label><input type="number" id="macro-delay" value="${existingData.delay || 100}"></div>
+            <div class="input-group"><label>${textDictionary[currentLanguage].clicks}</label><input type="number" id="macro-clicks" value="${existingData.clicks || 1}"></div>
+            <div class="input-group"><label>${textDictionary[currentLanguage].delay}</label><input type="number" id="macro-delay" value="${existingData.delay || 100}"></div>
         `;
     } else if (type === 'recorder') {
         const count = existingData.sequence ? existingData.sequence.length : 0;
         container.innerHTML = `
             <div class="recorder-controls" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
                 <div style="display: flex; gap: 10px;">
-                    <button class="secondary-btn" id="start-rec-btn" style="flex: 1; background: #e74c3c; color: white;">Grabar</button>
-                    <button class="secondary-btn" id="stop-rec-btn" style="flex: 1; display: none;">Parar</button>
+                    <button class="secondary-btn" id="start-rec-btn" style="flex: 1; background: #e74c3c; color: white;">${textDictionary[currentLanguage].record}</button>
+                    <button class="secondary-btn" id="stop-rec-btn" style="flex: 1; display: none;">${textDictionary[currentLanguage].stop}</button>
                 </div>
-                <button class="secondary-btn" id="clear-rec-btn">Borrar Secuencia</button>
+                <button class="secondary-btn" id="clear-rec-btn">${textDictionary[currentLanguage].clearSequence}</button>
                 <div id="rec-status" style="text-align: center; color: #888; font-size: 0.9rem;">
-                    ${count} teclas grabadas
+                    ${count} ${textDictionary[currentLanguage].keysRecorded}
                 </div>
             </div>
         `;
@@ -238,7 +372,7 @@ function setupRecorderListeners(existingData) {
         currentSequence = []; // Reset on new record
         startBtn.style.display = 'none';
         stopBtn.style.display = 'block';
-        status.innerText = 'Grabando... (Pulsa teclas)';
+        status.innerText = textDictionary[currentLanguage].recording;
         status.style.color = '#e74c3c';
         lastKeyTime = Date.now();
     });
@@ -247,14 +381,14 @@ function setupRecorderListeners(existingData) {
         isRecording = false;
         startBtn.style.display = 'block';
         stopBtn.style.display = 'none';
-        status.innerText = `${currentSequence.length} teclas grabadas`;
+        status.innerText = `${currentSequence.length} ${textDictionary[currentLanguage].keysRecorded}`;
         status.style.color = '#888';
     });
 
     clearBtn.addEventListener('click', () => {
         isRecording = false;
         currentSequence = [];
-        status.innerText = '0 teclas grabadas';
+        status.innerText = `0 ${textDictionary[currentLanguage].keysRecorded}`;
         startBtn.style.display = 'block';
         stopBtn.style.display = 'none';
     });
@@ -279,7 +413,7 @@ document.addEventListener('keydown', (e) => {
     });
 
     const status = document.getElementById('rec-status');
-    if (status) status.innerText = `Grabando... (${currentSequence.length})`;
+    if (status) status.innerText = `${textDictionary[currentLanguage].recording} (${currentSequence.length})`;
 });
 
 document.addEventListener('keyup', (e) => {
@@ -297,7 +431,7 @@ document.addEventListener('keyup', (e) => {
     });
 
     const status = document.getElementById('rec-status');
-    if (status) status.innerText = `Grabando... (${currentSequence.length})`;
+    if (status) status.innerText = `${textDictionary[currentLanguage].recording} (${currentSequence.length})`;
 });
 
 ipcRenderer.on('file-selected', (e, path) => {

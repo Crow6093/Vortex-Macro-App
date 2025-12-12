@@ -91,7 +91,8 @@ if (!gotTheLock) {
         mainWindow.webContents.on('did-finish-load', () => {
             const macros = store.get('macros');
             const theme = store.get('theme');
-            mainWindow.webContents.send('init-config', { macros, theme });
+            const language = store.get('language') || 'en';
+            mainWindow.webContents.send('init-config', { macros, theme, language });
         });
     };
 
@@ -178,6 +179,10 @@ if (!gotTheLock) {
 
     ipcMain.on('save-theme', (event, theme) => {
         store.set('theme', theme);
+    });
+
+    ipcMain.on('save-language', (event, lang) => {
+        store.set('language', lang);
     });
 
     ipcMain.on('select-file', async (event) => {
