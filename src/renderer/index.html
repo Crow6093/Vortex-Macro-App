@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VortexMacroApp</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="title-bar">
+        <div class="title-bar-branding">
+            <img src="../../assets/icon.ico" class="title-bar-icon">
+            <span class="app-name">Vortex Macro App</span>
+        </div>
+        <div class="title-bar-drag-area">
+            <span class="app-title">Vortex Macro</span>
+        </div>
+        <div class="window-controls">
+            <button id="min-btn" class="control-btn minimize" title="Minimize">
+                <svg width="12" height="12" viewBox="0 0 12 12">
+                    <rect y="5" width="12" height="2" fill="currentColor" />
+                </svg>
+            </button>
+            <button id="max-btn" class="control-btn maximize" title="Maximize">
+                <svg width="12" height="12" viewBox="0 0 12 12">
+                    <rect width="10" height="10" x="1" y="1" stroke="currentColor" stroke-width="2" fill="none" />
+                </svg>
+            </button>
+            <button id="close-btn" class="control-btn close" title="Close">
+                <svg width="12" height="12" viewBox="0 0 12 12">
+                    <path d="M1,1 L11,11 M1,11 L11,1" stroke="currentColor" stroke-width="2" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Empty State Instruction Bubble -->
+        <div id="instruction-bubble" class="comic-bubble">
+            ¡Haz clic en una tecla para empezar!
+        </div>
+        <!-- Disconnected Overlay -->
+        <div id="disconnected-overlay" class="overlay hidden">
+            <div class="overlay-content">
+                <!-- Using successVortex.svg or dynamically requested SVG -->
+                <img src="../../assets/successVortex.svg" alt="Connect Device" class="connect-icon">
+                <h2>Conecta El Vortex V2.0 para Continuar</h2>
+            </div>
+        </div>
+
+        <!-- Main Content Area (Full Center) -->
+        <main class="content-area centered-view">
+
+            <!-- Floating Status Light (Bottom Right) -->
+            <div class="status-indicator-floating">
+                <div class="light disconnected" id="device-status-light"></div>
+            </div>
+
+            <div class="macropad-visualizer">
+                <!-- Grid: 4 columns -->
+                <div class="key-grid">
+                    <!-- Row 1 -->
+                    <!-- Visual Scroll Wheel (Top Left) -->
+                    <div class="key-btn scroll-wheel-container status-key">
+                        <div class="scroll-wheel-visual"></div>
+                    </div>
+
+                    <div class="key-btn variant-orange" data-key="F13"></div>
+                    <div class="key-btn variant-white" data-key="F14"></div>
+                    <!-- Top Right Visual (Static Orange Circle) -->
+                    <div class="key-btn status-key" id="top-right-visual">
+                        <div class="orange-circle-visual"></div>
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="key-btn variant-white" data-key="F15"></div>
+                    <div class="key-btn variant-white" data-key="F16"></div>
+                    <div class="key-btn variant-white" data-key="F17"></div>
+                    <div class="key-btn variant-white" data-key="F18"></div>
+
+                    <!-- Row 3 -->
+                    <div class="key-btn variant-white" data-key="F19"></div>
+                    <div class="key-btn variant-white" data-key="F20"></div>
+                    <div class="key-btn variant-white" data-key="F21"></div>
+                    <div class="key-btn variant-white" data-key="F22"></div>
+
+                    <!-- Row 4 -->
+                    <!-- Empty Spacer -->
+                    <div class="key-spacer"></div>
+                    <div class="key-btn variant-orange" data-key="F23"></div>
+                    <div class="key-btn variant-white" data-key="F24"></div>
+                    <div class="key-spacer"></div>
+                </div>
+            </div>
+
+            <!-- Floating Config Panel -->
+            <div class="floating-panel" id="config-panel">
+                <div class="panel-header">
+                    <h3 id="selected-key-display">Asignar Macro</h3>
+                    <button id="close-panel" class="close-icon">&times;</button>
+                </div>
+                <div class="macro-type-selector">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <select id="macro-type" style="margin-bottom:0; width:65%;">
+                            <option value="none">No Action</option>
+                            <option value="web">Web Search</option>
+                            <option value="launch">Open Program</option>
+                            <option value="clicker">Auto Clicker</option>
+                            <option value="recorder">Grabar Teclas</option>
+                        </select>
+                        <div class="toggle-group" id="macro-toggle-container"
+                            style="padding:5px; border:none; background:transparent;">
+                            <label class="switch" title="Enable/Disable Macro">
+                                <input type="checkbox" id="macro-active-toggle" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="macro-settings" id="macro-settings-container">
+                    <!-- Dynamic settings -->
+                </div>
+
+                <div class="panel-actions">
+                    <button class="save-btn" id="save-macro-btn">Save</button>
+                </div>
+            </div>
+
+            <!-- Settings Button (Bottom Left - Floating Restored) -->
+            <button id="settings-btn" class="floating-icon-btn" title="Settings">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
+                </svg>
+            </button>
+
+            <!-- Settings Floating Panel -->
+            <div class="floating-panel settings-panel" id="settings-panel">
+                <div class="panel-header">
+                    <h3>Settings</h3>
+                    <button id="close-settings" class="close-icon">&times;</button>
+                </div>
+
+                <div class="setting-item">
+                    <label>Appearance</label>
+                    <div class="toggle-group">
+                        <span class="label">Theme</span>
+                        <select id="theme-selector-floating">
+                            <option value="dark">Dark Mode</option>
+                            <option value="light">Light Mode</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <label>System</label>
+                    <div class="toggle-group">
+                        <span class="label">Auto-launch</span>
+                        <label class="switch">
+                            <input type="checkbox" id="auto-launch-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <label>Profiles</label>
+                    <div class="profile-actions" style="display: flex; gap: 10px; margin-top: 5px;">
+                        <button id="export-profile-btn" class="save-btn"
+                            style="padding: 8px; font-size: 0.9rem;">Export</button>
+                        <button id="import-profile-btn" class="secondary-btn"
+                            style="padding: 8px; font-size: 0.9rem;">Import</button>
+                    </div>
+                </div>
+
+                <div class="setting-footer">
+                    <span class="version-text">Vortex v2.0</span>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,775 @@
+:root {
+    /* Colors - HSL for easy theming */
+    --primary-hue: 250;
+    /* Deep Purple/Blue */
+    --accent-hue: 160;
+    /* Teal/Green */
+
+    --bg-color: hsl(220, 15%, 8%);
+    --card-bg: hsl(220, 15%, 15%);
+    --text-main: hsl(0, 0%, 95%);
+    --text-muted: hsl(220, 10%, 65%);
+
+    --primary-color: hsl(var(--primary-hue), 70%, 60%);
+    --primary-hover: hsl(var(--primary-hue), 70%, 50%);
+
+    --accent-color: hsl(var(--accent-hue), 80%, 50%);
+
+    --border-radius: 16px;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --floating-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+
+    /* Keycap Variables - Dark Default */
+    /* Keycap Variables - Dark Default */
+    /* Deeper concave gradient */
+    --key-bg: radial-gradient(circle at 50% 50%, #2a2a2a 0%, #1a1a1a 40%, #111 80%, #080808 100%);
+    --key-shadow-outer: 0 4px 8px rgba(0, 0, 0, 0.5);
+    /* Stronger inner shadow for depth */
+    --key-shadow-inner: inset 0 2px 4px rgba(255, 255, 255, 0.05), inset 0 5px 15px rgba(0, 0, 0, 0.9);
+    --key-text-color: transparent;
+    /* Hide text */
+    --key-text-hover: transparent;
+    --key-text-shadow: none;
+
+    /* Physical Variant Colors */
+    --key-bg-white: radial-gradient(circle at 50% 50%, #f0f0f0 0%, #dcdcdc 60%, #c0c0c0 100%);
+    --key-shadow-white-outer: 0 4px 8px rgba(0, 0, 0, 0.2);
+    --key-shadow-white-inner: inset 0 1px 2px rgba(255, 255, 255, 1), inset 0 3px 10px rgba(0, 0, 0, 0.1);
+
+    --key-bg-orange: radial-gradient(circle at 50% 50%, #ffab40 0%, #ff9100 60%, #e65100 100%);
+    --key-shadow-orange-outer: 0 4px 8px rgba(0, 0, 0, 0.3);
+    --key-shadow-orange-inner: inset 0 1px 2px rgba(255, 255, 255, 0.4), inset 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] {
+    --bg-color: hsl(220, 15%, 95%);
+    --card-bg: hsl(0, 0%, 100%);
+    --text-main: hsl(220, 15%, 10%);
+    --glass-bg: rgba(0, 0, 0, 0.05);
+
+    /* Keycap Variables - Light Mode */
+    /* Keycap Variables - Light Mode */
+    /* Deeper concave gradient light */
+    --key-bg: radial-gradient(circle at 50% 50%, #e0e0e0 0%, #d0d0d0 40%, #b0b0b0 80%, #a0a0a0 100%);
+    --key-shadow-outer: 0 4px 8px rgba(0, 0, 0, 0.15);
+    --key-shadow-inner: inset 0 1px 2px rgba(255, 255, 255, 0.8), inset 0 3px 10px rgba(0, 0, 0, 0.2);
+    --key-text-color: transparent;
+    /* Hide text */
+    --key-text-hover: transparent;
+    --key-text-shadow: none;
+
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Outfit', sans-serif;
+    user-select: none;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Custom Title Bar */
+.title-bar {
+    height: 32px;
+    background: transparent;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-right: 10px;
+    padding-left: 10px;
+    -webkit-app-region: drag;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 100;
+}
+
+.title-bar-branding {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 45px;
+    /* Push it down significantly */
+    margin-left: 10px;
+}
+
+.title-bar-icon {
+    height: 50px;
+    width: 50px;
+    object-fit: contain;
+    pointer-events: none;
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.2));
+}
+
+.app-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #ffffff;
+    text-transform: capitalize;
+    letter-spacing: -0.5px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    opacity: 0.95;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.title-bar-drag-area {
+    display: none;
+    /* Minimalist: hide title text */
+}
+
+.window-controls {
+    display: flex;
+    gap: 5px;
+    -webkit-app-region: no-drag;
+}
+
+.control-btn {
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.control-btn:hover {
+    background: var(--glass-bg);
+    color: var(--text-main);
+}
+
+.control-btn.close:hover {
+    background: #ff4444;
+    color: white;
+}
+
+/* Main Area */
+.app-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.macropad-visualizer {
+    transform: scale(1.1);
+}
+
+.key-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 20px;
+    background: #1a1a1a;
+    /* Dark Gray opaque */
+    border-radius: 24px;
+    border: none;
+    /* Remove border to let glow frame it */
+    box-shadow: var(--floating-shadow);
+    position: relative;
+    /* Removed z-index: 1 to avoid stacking context covering glow */
+}
+
+/* Rotating LED Border Effect */
+@property --angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+
+.key-grid::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    /* 2px border width */
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: conic-gradient(from var(--angle), #0040ff, #af40ff, #0040ff);
+    z-index: -1;
+    border-radius: 26px;
+    /* 24px + 2px */
+    animation: rotate-border 4s linear infinite;
+}
+
+.key-grid::after {
+    filter: blur(20px);
+    /* Stronger blur for underglow */
+    z-index: -2;
+    /* Further behind */
+    opacity: 0.7;
+}
+
+@keyframes rotate-border {
+    to {
+        --angle: 360deg;
+    }
+}
+
+.key-btn {
+    width: 70px;
+    height: 70px;
+    /* Concave Keycap Style using Theme Vars */
+    background: var(--key-bg);
+    border: none;
+    border-radius: 12px;
+
+    /* Complex shadows for 3D effect */
+    box-shadow: var(--key-shadow-outer), var(--key-shadow-inner);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--key-text-color);
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    text-shadow: var(--key-text-shadow);
+}
+
+.key-btn svg {
+    pointer-events: none;
+    width: 28px;
+    height: 28px;
+    opacity: 0.9;
+}
+
+.key-btn:hover {
+    color: var(--key-text-hover);
+    transform: translateY(-1px);
+    box-shadow:
+        0 6px 12px rgba(0, 0, 0, 0.3),
+        /* softer hover shadow */
+        var(--key-shadow-inner);
+}
+
+.key-btn:active {
+    transform: translateY(2px);
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.2),
+        var(--key-shadow-inner);
+}
+
+.key-btn.active,
+.key-btn.assigned {
+    /* Subtle glow for assigned keys instead of full color change to preserve 3D shape */
+    color: #000000;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(var(--accent-hue), 80%, 50%, 0.3);
+}
+
+.key-btn.active-trigger {
+    background: radial-gradient(circle at 50% 50%, #444 0%, #222 100%);
+    transform: scale(0.96) translateY(2px);
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9);
+    color: var(--primary-color);
+}
+
+/* Special Buttons in Grid */
+.special-btn {
+    color: var(--text-muted);
+}
+
+.special-btn:hover {
+    color: var(--primary-color);
+}
+
+.status-key {
+    cursor: default;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    /* Ensure it centers the round light */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.status-key:hover {
+    transform: none;
+    box-shadow: none !important;
+}
+
+/* Status Light - Default Floating */
+#device-status-light {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #444;
+    /* Off */
+    box-shadow: none;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+#device-status-light.connected {
+    background: var(--accent-color);
+    box-shadow: 0 0 10px var(--accent-color);
+}
+
+/* Orange Visual in Top-Right Grid */
+.orange-circle-visual {
+    width: 64px;
+    /* Nearly full size matching rounded key look */
+    height: 64px;
+    border-radius: 50%;
+    background:
+        linear-gradient(135deg, transparent 42%, #e55e00 42%, #e55e00 58%, transparent 58%),
+        #ff9d00;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 2px 5px rgba(255, 255, 255, 0.2);
+    border: none;
+}
+
+.status-indicator-floating {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+    border-color: transparent;
+}
+
+/* Scroll Wheel Visual */
+/* Scroll Wheel Visual - Line Art Style (Gray Tones) */
+.scroll-wheel-container {
+    background: #e0e0e0 !important;
+    /* Light Gray background */
+    border: 3px solid #555 !important;
+    /* Dark Gray border */
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    cursor: default;
+    display: flex;
+    /* Center inner */
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: 70px;
+}
+
+.scroll-wheel-visual {
+    width: 36px;
+    height: 48px;
+    border-radius: 4px;
+    background: #e0e0e0;
+    /* Match container */
+    border: 3px solid #555;
+    /* Match container border */
+    box-shadow: none;
+    position: relative;
+    transform: none;
+    /* Horizontal lines pattern - Gray lines */
+    background-image: repeating-linear-gradient(180deg,
+            #e0e0e0 0px,
+            #e0e0e0 5px,
+            #555 5px,
+            #555 8px);
+}
+
+/* Side stub for the wheel axle */
+.scroll-wheel-visual::after {
+    content: '';
+    position: absolute;
+    right: -6px;
+    /* Stick out right */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 20px;
+    background: #e0e0e0;
+    border: 3px solid #555;
+    border-left: none;
+    /* Connect to main */
+    z-index: -1;
+}
+
+/* Disconnected Overlay */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    /* Dark semi-transparent */
+    backdrop-filter: blur(8px) grayscale(100%);
+    /* Blur + Gray effect */
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s ease;
+}
+
+.overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.overlay-content {
+    text-align: center;
+    color: #fff;
+}
+
+.connect-icon {
+    width: 300px;
+    height: 300px;
+    margin-bottom: 30px;
+    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.4));
+}
+
+/* Variant Overrides */
+.variant-white {
+    background: var(--key-bg-white) !important;
+    box-shadow: var(--key-shadow-white-outer), var(--key-shadow-white-inner) !important;
+}
+
+.variant-orange {
+    background: var(--key-bg-orange) !important;
+    box-shadow: var(--key-shadow-orange-outer), var(--key-shadow-orange-inner) !important;
+}
+
+.key-spacer {
+    width: 70px;
+    height: 70px;
+    visibility: hidden;
+}
+
+/* Floating Panel */
+.floating-panel {
+    position: absolute;
+    top: 50%;
+    /* Default center, or adjusted via JS */
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    width: 280px;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: var(--floating-shadow);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 50;
+    backdrop-filter: blur(20px);
+}
+
+/* Floating Settings Button (Restored) */
+.floating-icon-btn {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-muted);
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    z-index: 60;
+}
+
+.floating-icon-btn:hover {
+    background: var(--glass-bg);
+    color: var(--text-main);
+    transform: rotate(45deg);
+    border-color: var(--primary-color);
+}
+
+.floating-panel.open {
+    opacity: 1;
+    pointer-events: all;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.panel-header h3 {
+    font-size: 1.2rem;
+    color: var(--primary-color);
+}
+
+.close-icon {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.macro-type-selector select,
+input {
+    width: 100%;
+    background: var(--bg-color);
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+    padding: 10px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    outline: none;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.save-btn {
+    width: 100%;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.save-btn:hover {
+    background: var(--primary-hover);
+}
+
+.secondary-btn {
+    width: 100%;
+    background: var(--card-bg);
+    color: var(--text-main);
+    border: 1px solid var(--glass-border);
+    padding: 12px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.secondary-btn:hover {
+    background: var(--glass-bg);
+    border-color: var(--text-muted);
+}
+
+/* Settings Panel Positioning Fix */
+.settings-panel {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+}
+
+/* Specific Settings Panel Styles */
+.settings-panel {
+    bottom: 80px;
+    /* Position above the button */
+    left: 20px;
+    top: auto;
+    /* Override default center */
+    transform-origin: bottom left;
+    transform: scale(0.9);
+    width: 250px;
+}
+
+.settings-panel.open {
+    transform: scale(1);
+    opacity: 1;
+    pointer-events: all;
+}
+
+.toggle-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-color);
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+}
+
+.toggle-group .label {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.setting-footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+
+#theme-selector-floating {
+    width: auto;
+    margin: 0;
+    padding: 5px 10px;
+    border: none;
+    background: transparent;
+    color: var(--accent-color);
+    font-weight: 600;
+    cursor: pointer;
+    text-align: right;
+}
+
+/* Apple-style Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--card-bg);
+    /* Unchecked bg */
+    border: 1px solid var(--glass-border);
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 2px;
+    /* Center partially */
+    background-color: var(--text-muted);
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+input:checked+.slider:before {
+    transform: translateX(20px);
+    background-color: white;
+}
+
+/* Hover effect for slider */
+.slider:hover {
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+/* File Input Layout */
+.file-input-wrapper {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+}
+
+.file-input-wrapper input {
+    margin-bottom: 0;
+    flex: 1;
+}
+
+.file-input-wrapper .secondary-btn {
+    width: auto;
+    padding: 10px 15px;
+    white-space: nowrap;
+}
+
+
+/* Comic Instruction Bubble */
+.comic-bubble {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /* Centered initially */
+    background: #ffffff;
+    color: #000000;
+    padding: 20px 30px;
+    border-radius: 20px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    z-index: 50;
+    border: 3px solid #000000;
+    /* Comic border */
+    max-width: 300px;
+    text-align: center;
+    display: none;
+    /* Hidden by default */
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Speech Bubble Tail */
+.comic-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 15px 15px 0;
+    border-style: solid;
+    border-color: #000000 transparent transparent transparent;
+}
+
+.comic-bubble::before {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    /* Slight offset to create white inner */
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 12px 12px 0;
+    border-style: solid;
+    border-color: #ffffff transparent transparent transparent;
+    z-index: 1;
+}
+
+@keyframes popIn {
+    from {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+    }
+
+    to {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
