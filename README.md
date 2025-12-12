@@ -1,6 +1,6 @@
 # Vortex Macro V2
 
-![Vortex Main UI](file:///c:/Users/Cuervo/.gemini/antigravity/brain/6e1a812b-5109-4d4e-8081-689aa8df1b02/vortex_main_ui_1765545558670.png)
+![Vortex Main UI](assets/mainUi.png)
 
 **Vortex Macro V2** es una potente aplicación de gestión de macros diseñada para maximizar tu productividad y experiencia de juego. Con una interfaz moderna, oscuray totalmente personalizable, Vortex te permite asignar acciones complejas a cada tecla de tu dispositivo Vortex.
 
