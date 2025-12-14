@@ -60,7 +60,21 @@ const textDictionary = {
         macroWeb: "Búsqueda Web",
         macroLaunch: "Abrir Programa",
         macroClicker: "Auto Clicker",
-        macroRecorder: "Grabar Teclas"
+        macroRecorder: "Grabar Teclas",
+        // LED Modes
+        ledModeStatic: "Color Estático",
+        ledModeRainbow: "Arcoíris",
+        ledModeCycle: "Ciclo Espectral",
+        ledModeReactive: "Reactivo (Toque)",
+        ledModeReactive: "Reactivo (Toque)",
+        // LED Panel Labels
+        ledEffectLabel: "Efecto:",
+        ledColorPreview: "COLOR ACTUAL",
+        ledUserPresets: "TUS COLORES",
+        ledFactoryPresets: "PREDETERMINADOS",
+        ledBrightness: "BRILLO",
+        ledGradStart: "Inicio",
+        ledGradEnd: "Fin"
     },
     en: {
         settingsTitle: "Settings",
@@ -92,7 +106,21 @@ const textDictionary = {
         macroWeb: "Web Search",
         macroLaunch: "Open Program",
         macroClicker: "Auto Clicker",
-        macroRecorder: "Record Keys"
+        macroRecorder: "Record Keys",
+        // LED Modes
+        ledModeStatic: "Static Color",
+        ledModeRainbow: "Rainbow",
+        ledModeCycle: "Spectrum Cycle",
+        ledModeReactive: "Reactive (Touch)",
+        ledModeReactive: "Reactive (Touch)",
+        // LED Panel Labels
+        ledEffectLabel: "Effect:",
+        ledColorPreview: "CURRENT COLOR",
+        ledUserPresets: "YOUR COLORS",
+        ledFactoryPresets: "PRESET COLORS",
+        ledBrightness: "BRIGHTNESS",
+        ledGradStart: "Start",
+        ledGradEnd: "End"
     }
 };
 
@@ -121,7 +149,6 @@ function changeLanguage(lang) {
     // Update Macro Types Dropdown
     const macroSelect = document.getElementById('macro-type');
     if (macroSelect) {
-        // We can access options by value or index
         const options = macroSelect.options;
         for (let i = 0; i < options.length; i++) {
             const opt = options[i];
@@ -130,6 +157,20 @@ function changeLanguage(lang) {
             if (opt.value === 'launch') opt.text = texts.macroLaunch;
             if (opt.value === 'clicker') opt.text = texts.macroClicker;
             if (opt.value === 'recorder') opt.text = texts.macroRecorder;
+        }
+    }
+
+    // Update LED Mode Selector
+    const ledSelect = document.getElementById('led-mode-selector');
+    if (ledSelect) {
+        const options = ledSelect.options;
+        for (let i = 0; i < options.length; i++) {
+            const opt = options[i];
+            if (opt.value === 'static') opt.text = texts.ledModeStatic;
+            if (opt.value === 'rainbow') opt.text = texts.ledModeRainbow;
+            if (opt.value === 'cycle') opt.text = texts.ledModeCycle;
+            if (opt.value === 'reactive') opt.text = texts.ledModeReactive;
+            if (opt.value === 'reactive') opt.text = texts.ledModeReactive;
         }
     }
 
@@ -499,6 +540,8 @@ const themeSelectorFloating = document.getElementById('theme-selector-floating')
 if (settingsBtn) {
     settingsBtn.addEventListener('click', () => {
         settingsPanel.classList.toggle('open');
+        // Mutual Exclusivity: Close LED Panel if open
+        if (ledPanel) ledPanel.classList.remove('open');
     });
 }
 
@@ -507,6 +550,598 @@ if (closeSettingsBtn) {
         settingsPanel.classList.remove('open');
     });
 }
+
+// LED Panel Logic & State
+let ledState = {
+    mode: 'static',
+    color: '#ff0000',
+    brightness: 100,
+    userPresets: [],
+    customGradient: { start: '#ff0000', end: '#0000ff' }
+};
+
+// UI Elements
+const ledBtn = document.getElementById('led-btn');
+const ledPanel = document.getElementById('led-panel');
+const closeLedBtn = document.getElementById('close-led');
+
+// Control Elements
+const modeSelect = document.getElementById('led-mode-selector');
+const colorPicker = document.getElementById('led-color-picker');
+const rgbInputs = {
+    r: document.getElementById('rgb-r'),
+    g: document.getElementById('rgb-g'),
+    b: document.getElementById('rgb-b')
+};
+const colorPreview = document.getElementById('color-preview-display');
+const brightnessSlider = document.getElementById('led-brightness');
+const gradientControls = document.getElementById('custom-gradient-controls'); // section
+const userPresetsGrid = document.getElementById('user-presets-grid');
+const addPresetBtn = document.getElementById('add-preset-btn');
+
+// --- Helper Functions ---
+
+function hexToRgb(hex) {
+    // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+
+function rgbToHex(r, g, b) {
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+
+function updateUIFromState() {
+    // Sync UI elements with ledState
+    if (modeSelect) modeSelect.value = ledState.mode;
+
+    // Controls visibility
+    // Controls visibility
+    const isStatic = (ledState.mode === 'static');
+    const isBreathing = (ledState.mode === 'breathing');
+
+    if (document.getElementById('static-color-controls')) {
+        const isVortex = (ledState.mode === 'circular' || ledState.mode === 'vortex');
+        const showColorControls = (isStatic || isBreathing); // Only for single color modes
+
+        document.getElementById('static-color-controls').style.display = showColorControls ? 'flex' : 'none';
+
+        // Show Dual Color Controls if mode is Circular/Vortex
+        const dualColorControls = document.getElementById('dual-color-controls');
+        if (dualColorControls) {
+            dualColorControls.style.display = isVortex ? 'flex' : 'none';
+        }
+
+        // Sync Dual Color Inputs if visible
+        if (isVortex && ledState.customGradient) {
+            const g1 = document.getElementById('grad-color-1');
+            const g2 = document.getElementById('grad-color-2');
+            if (g1) g1.value = ledState.customGradient.start || '#ff0000';
+            if (g2) g2.value = ledState.customGradient.end || '#0000ff';
+        }
+
+        // Feature Request: Hide User/Factory Presets in Circular Mode (Vortex)
+        const userPresets = document.getElementById('user-presets-section');
+        const factoryPresets = document.getElementById('factory-presets-section');
+        if (userPresets) userPresets.style.display = isVortex ? 'none' : 'block';
+        if (factoryPresets) factoryPresets.style.display = isVortex ? 'none' : 'block';
+    }
+
+
+
+    if (isStatic || isBreathing || isReactive) {
+        const rgb = hexToRgb(ledState.color);
+        if (rgb) {
+            rgbInputs.r.value = rgb.r;
+            rgbInputs.g.value = rgb.g;
+            rgbInputs.b.value = rgb.b;
+        }
+        colorPreview.style.backgroundColor = ledState.color;
+    }
+
+    if (brightnessSlider) brightnessSlider.value = ledState.brightness;
+
+    renderUserPresets();
+    updateVirtualKeyboardColor();
+}
+
+function updateVirtualKeyboardColor() {
+    const hex = ledState.color;
+    document.documentElement.style.setProperty('--current-led-color', hex);
+
+    // Vortex Gradients
+    if ((ledState.mode === 'vortex' || ledState.mode === 'circular') && ledState.customGradient) {
+        document.documentElement.style.setProperty('--grad-start', ledState.customGradient.start || '#ff00ff');
+        document.documentElement.style.setProperty('--grad-end', ledState.customGradient.end || '#0000ff');
+    }
+
+    // Board Decoration (Border Glow)
+    let boardGradient = `conic-gradient(from var(--angle), ${hex}, ${hex}40, ${hex})`; // Default Static (Color + Dimmer tail)
+
+    if (ledState.mode === 'rainbow') {
+        boardGradient = `conic-gradient(from var(--angle), red, orange, yellow, green, blue, indigo, violet, red)`;
+    } else if (ledState.mode === 'vortex' || ledState.mode === 'circular') {
+        const c1 = ledState.customGradient?.start || '#ff00ff';
+        const c2 = ledState.customGradient?.end || '#0000ff';
+        boardGradient = `conic-gradient(from var(--angle), ${c1}, ${c2}, ${c1})`;
+    } else if (ledState.mode === 'breathing') {
+        // for breathing, maybe we can't easily animate the gradient string in JS without perf hit, 
+        // but the existing breathing animation on opacity/shadow might be enough? 
+        // Let's just match the static color logic but maybe standard solid?
+        boardGradient = `conic-gradient(from var(--angle), ${hex}, ${hex})`;
+    }
+
+    // Apply to key-grid via CSS Variable
+    const keyGrid = document.querySelector('.key-grid');
+    if (keyGrid) {
+        keyGrid.style.setProperty('--board-gradient', boardGradient);
+        // Also update the underglow opacity/color if needed?
+        // The ::after uses opacity 0.7 and blur. adjusting its background might be hard via var on pseudo 
+        // unless we used currentcolor or another var.
+        // Actually ::after content allows background inheritance if we set it? 
+        // Let's stick to the border for now as requested.
+    }
+
+    const keys = document.querySelectorAll('.key-btn');
+    keys.forEach(key => {
+        // Reset Styles
+        key.style.borderColor = '';
+        key.style.boxShadow = '';
+        key.classList.remove('anim-breathing', 'anim-rainbow', 'anim-vortex');
+
+        if (ledState.mode === 'rainbow') {
+            key.classList.add('anim-rainbow');
+        } else if (ledState.mode === 'breathing') {
+            key.classList.add('anim-breathing');
+        } else if (ledState.mode === 'vortex' || ledState.mode === 'circular') {
+            key.classList.add('anim-vortex');
+        } else {
+            // Static Default
+            key.style.borderColor = hex;
+            key.style.boxShadow = `0 0 8px ${hex}40`;
+        }
+    });
+}
+
+// ... existing state ...
+
+// Debounce Timer
+let ledUpdateTimer = null;
+
+function sendLedUpdate() {
+    // Immediate UI update for responsiveness
+    // But throttle HID commands
+    if (ledUpdateTimer) clearTimeout(ledUpdateTimer);
+
+    ledUpdateTimer = setTimeout(() => {
+        // Map 'circular' mode to 'vortex' for backend compatibility
+        const modeToSend = ledState.mode === 'circular' ? 'vortex' : ledState.mode;
+
+        ipcRenderer.send('update-led-color', {
+            mode: modeToSend,
+            color: ledState.color,
+            brightness: parseInt(ledState.brightness),
+            gradient: ledState.customGradient
+        });
+        saveLedConfig();
+    }, 50); // 50ms debounce (approx 20fps max)
+}
+
+// Update ledState definition reference implicitly by adding activePresetIndex property usage
+// But first, let's update the state object initiation or just assign it.
+// We'll trust ledState exists.
+
+// Add activePresetIndex to state tracking (not saved to config, just runtime)
+if (typeof ledState.activePresetIndex === 'undefined') {
+    ledState.activePresetIndex = null;
+}
+
+function renderUserPresets() {
+    userPresetsGrid.innerHTML = ''; // Clear all
+
+    for (let i = 0; i < 7; i++) {
+        const color = ledState.userPresets[i];
+        const btn = document.createElement('button');
+        btn.className = 'preset-slot';
+
+        // Active State Styling
+        if (ledState.activePresetIndex === i) {
+            btn.classList.add('active');
+        }
+
+        if (color) {
+            btn.style.backgroundColor = color;
+            btn.title = `Preset ${i + 1}: ${color} (Click to Edit)`;
+            btn.classList.add('assigned');
+        } else {
+            btn.style.backgroundColor = '#333';
+            btn.title = `Empty Slot ${i + 1} (Click to Edit/Save)`;
+            btn.classList.remove('assigned');
+        }
+
+        // Logic: Click to Select (Edit Mode)
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent deselecting immediately if we add document click later
+
+            if (ledState.activePresetIndex === i) {
+                // Deselect if already active
+                ledState.activePresetIndex = null;
+                renderUserPresets();
+            } else {
+                // Select this slot
+                ledState.activePresetIndex = i;
+                renderUserPresets();
+
+                // If it has a color, load it to the wheel
+                if (color) {
+                    applyColor(color);
+                } else {
+                    // It's empty. Save current wheel color to it immediately?
+                    // Or wait for user to move wheel?
+                    // User request: "click to edit changing its color" implies we start editing.
+                    // Let's save current color to it to initialize it, or leave it empty?
+                    // Better validation: If empty, fill with active color.
+                    saveColorToSlot(i);
+                }
+            }
+        });
+
+        // Right Click: Clear slot (or overwrite/reset)
+        btn.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (confirm('Clear this preset slot?')) {
+                ledState.userPresets[i] = null;
+                if (ledState.activePresetIndex === i) ledState.activePresetIndex = null;
+                saveLedConfig();
+                renderUserPresets();
+            }
+        });
+
+        userPresetsGrid.appendChild(btn);
+    }
+}
+
+function saveColorToSlot(index) {
+    ledState.userPresets[index] = ledState.color;
+    saveLedConfig();
+    renderUserPresets();
+}
+
+// Hook into applyColor
+function applyColor(hex, send = true, updateActiveSlot = true) {
+    ledState.color = hex;
+
+    // Only switch to static if we are currently OFF or in a mode that doesn't support single color
+    const allowedModes = ['static', 'breathing', 'reactive'];
+    if (!allowedModes.includes(ledState.mode)) {
+        ledState.mode = 'static';
+    }
+
+    // User Fix: If a User Preset is actively selected for editing,
+    // applying a color (e.g. from Factory Preset or Paste) should update it ONLY if updateActiveSlot is true.
+    if (ledState.activePresetIndex !== null && updateActiveSlot) {
+        ledState.userPresets[ledState.activePresetIndex] = hex;
+        saveLedConfig();
+        // Update visual slot but avoid recursively selecting it invalidly? 
+        // renderUserPresets handles re-rendering checks.
+        renderUserPresets();
+    }
+
+    updateUIFromState(); // This updates inputs
+    if (send) {
+        sendLedUpdate();
+    }
+}
+
+// Updated Input Handler (for Wheel/RGB inputs to auto-update active preset)
+function handleColorInputChanged(newHex) {
+    ledState.color = newHex;
+
+    // Keep current mode if allowed, otherwise static
+    const allowedModes = ['static', 'breathing', 'reactive', 'vortex'];
+    if (!allowedModes.includes(ledState.mode)) {
+        ledState.mode = 'static';
+    }
+
+    // If Vortex Mode, also update the first gradient input to match wheel
+    if (ledState.mode === 'vortex') {
+        if (!ledState.customGradient) ledState.customGradient = { start: newHex, end: '#0000FF' };
+        ledState.customGradient.start = newHex;
+        // Update input element if exists
+        const grad1 = document.getElementById('grad-color-1');
+        if (grad1) grad1.value = newHex;
+    }
+
+    // If a preset is active, update it live!
+    if (ledState.activePresetIndex !== null) {
+        ledState.userPresets[ledState.activePresetIndex] = newHex;
+        saveLedConfig();
+        renderUserPresets();
+    }
+
+    updateUIFromState();
+    sendLedUpdate();
+}
+
+// We need to route existing inputs to `handleColorInputChanged`
+// Override previous listeners... or update them.
+// We can't easy replace listeners without context. 
+// We'll update `pickColorFromCanvas` and `handleRgbInput` to call this new handler.
+
+
+
+
+function saveLedConfig() {
+    ipcRenderer.send('save-led-config', {
+        brightness: parseInt(ledState.brightness),
+        userPresets: ledState.userPresets,
+        lastMode: ledState.mode,
+        lastColor: ledState.color,
+        gradient: ledState.customGradient
+    });
+}
+
+// --- Event Listeners ---
+
+if (ledBtn) {
+    ledBtn.addEventListener('click', () => {
+        ledPanel.classList.toggle('open');
+        // Mutual Exclusivity: Close Settings Panel if open
+        if (settingsPanel) settingsPanel.classList.remove('open');
+        closePanel(); // Closes main macro panel?
+    });
+}
+
+if (closeLedBtn) {
+    closeLedBtn.addEventListener('click', () => ledPanel.classList.remove('open'));
+}
+
+// Mode Selector
+if (modeSelect) {
+    modeSelect.addEventListener('change', (e) => {
+        ledState.mode = e.target.value;
+        updateUIFromState();
+        sendLedUpdate();
+    });
+}
+
+// Color Wheel Canvas Logic
+const colorCanvas = document.getElementById('color-wheel-canvas');
+let ctx = null;
+let isDraggingWheel = false;
+
+if (colorCanvas) {
+    ctx = colorCanvas.getContext('2d');
+    drawColorWheel();
+
+    // Mouse Events
+    colorCanvas.addEventListener('mousedown', (e) => {
+        isDraggingWheel = true;
+        pickColorFromCanvas(e);
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isDraggingWheel) {
+            // Need bounding rect relative to canvas
+            const rect = colorCanvas.getBoundingClientRect();
+            // Check if mouse is near canvas or we just track generally? 
+            // Better to pass the event relative to canvas if possible, or calculate:
+            // But 'e' is global mousemove. We act if isDraggingWheel is true.
+
+            // Re-calculate x,y relative to canvas
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            pickColorFromCanvas({ offsetX: x, offsetY: y });
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDraggingWheel = false;
+    });
+}
+
+function drawColorWheel() {
+    if (!ctx) return;
+    const width = colorCanvas.width;
+    const height = colorCanvas.height;
+    const cx = width / 2;
+    const cy = height / 2;
+    const radius = width / 2;
+
+    ctx.clearRect(0, 0, width, height);
+
+    // Draw Conic Gradient (Hue)
+    for (let angle = 0; angle < 360; angle += 1) {
+        let startAngle = (angle - 2) * Math.PI / 180;
+        let endAngle = (angle + 1) * Math.PI / 180;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radius, startAngle, endAngle);
+        ctx.closePath();
+
+        ctx.fillStyle = `hsl(${angle}, 100%, 50%)`;
+        ctx.fill();
+    }
+
+    // Draw Radial Gradient (Saturation/Lightness overlay) - White center to transparent
+    const gradWhite = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    gradWhite.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    gradWhite.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = gradWhite;
+    ctx.fill();
+
+    // NOTE: This creates a pastel center. For full black access, we'd need a brightness slider or black overlay.
+    // Given we have a brightness slider separate, this HSV-like wheel (Hue/Sat) is good. 
+}
+
+function pickColorFromCanvas(e) {
+    if (!ctx) return;
+
+    // Coordinates
+    const x = e.offsetX;
+    const y = e.offsetY;
+
+    // Read pixel
+    // Note: this can be slow if done every move, but usually fine for small canvas
+    const p = ctx.getImageData(x, y, 1, 1).data;
+
+    // Check if transparent (outside circle) - rough check
+    // Our drawing fills circle, but corners are transparent.
+    if (p[3] === 0) return;
+
+    // Set Color
+    const hex = rgbToHex(p[0], p[1], p[2]);
+
+    // Update Text Inputs
+    rgbInputs.r.value = p[0];
+    rgbInputs.g.value = p[1];
+    rgbInputs.b.value = p[2];
+
+    // Use new handler to propagate changes
+    handleColorInputChanged(hex);
+}
+
+// Override updateUIFromState to handle canvas if needed? No, standard RGB inputs update is fine.
+// But we might want to show a "selector" dot on the wheel in future. For now, direct pick is asked.
+
+// Remove old colorPicker listener if it exists or keep it for the fallback input if we left it?
+// The previous code block was:
+/*
+if (colorPicker) {
+    colorPicker.addEventListener('input', (e) => { ... })
+}
+*/
+// Since we removed 'led-color-picker' from DOM in HTML step (replaced with canvas), that ID won't match or we removed it. 
+// If we kept a hidden input, we can sync it.
+// The task said "Directly in the wheel", so canvas click logic above handles it.
+
+
+// RGB Inputs
+function handleRgbInput() {
+    let r = parseInt(rgbInputs.r.value) || 0;
+    let g = parseInt(rgbInputs.g.value) || 0;
+    let b = parseInt(rgbInputs.b.value) || 0;
+
+    // Clamp
+    r = Math.min(255, Math.max(0, r));
+    g = Math.min(255, Math.max(0, g));
+    b = Math.min(255, Math.max(0, b));
+
+    const hex = rgbToHex(r, g, b);
+
+    // Use new handler
+    handleColorInputChanged(hex);
+}
+
+Object.values(rgbInputs).forEach(input => {
+    if (input) input.addEventListener('input', handleRgbInput);
+});
+
+// Brightness
+if (brightnessSlider) {
+    brightnessSlider.addEventListener('input', (e) => {
+        ledState.brightness = e.target.value;
+        sendLedUpdate(); // Debouncing could be added here if HID is slow
+    });
+}
+
+// Add Preset
+
+
+// Factory Presets logic
+document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const color = btn.dataset.color;
+        if (color) {
+            applyColor(color, true, false); // False = Don't overwrite active user slot
+        } else if (btn.dataset.mode) {
+            // Special mode presets
+
+            if (btn.dataset.mode === 'split-blue-lilac') {
+                // CUSTOM SPLIT MODE: Half Lilac (#FF00FF), Half Blue (#0000FF)
+                ledState.mode = 'split';
+                ledState.color1 = '#FF00FF'; // Lilac First
+                ledState.color2 = '#0000FF'; // Blue Second
+                ledState.color = '#FF00FF'; // Primary visual
+            }
+            else if (btn.dataset.mode === 'vortex') {
+                ledState.mode = 'vortex';
+                // Default Vortex behavior (Gradient)
+                // ... potentially keep existing logic or reset defaults ...
+                ledState.color = '#0000FF';
+            }
+            else {
+                ledState.mode = btn.dataset.mode;
+            }
+
+            // Sync with UI
+            updateUIFromState();
+            sendLedUpdate();
+        }
+    });
+});
+
+// Custom Gradient Inputs
+const grad1 = document.getElementById('grad-color-1');
+const grad2 = document.getElementById('grad-color-2');
+if (grad1 && grad2) {
+    const updateGrad = () => {
+        if (!ledState.customGradient) ledState.customGradient = {};
+        ledState.customGradient.start = grad1.value;
+        ledState.customGradient.end = grad2.value;
+
+        // Update visualizer or whatever else
+        updateVirtualKeyboardColor();
+        sendLedUpdate();
+    };
+    grad1.addEventListener('input', updateGrad);
+    grad2.addEventListener('input', updateGrad);
+}
+
+// Init Config Hook
+ipcRenderer.on('init-config', (event, config) => {
+    // Existing config loading...
+    currentMacros = config.macros || {};
+    const language = config.language || 'en';
+    const theme = config.theme || 'dark';
+
+    // LED State Loading
+    if (config.led) {
+        // Migration: If userPresets was dynamic array, pad it or slice it
+        let presets = config.led.userPresets || [];
+        if (!Array.isArray(presets)) presets = [];
+
+        // Ensure size 7
+        ledState.userPresets = new Array(7).fill(null).map((_, i) => presets[i] || null);
+
+        ledState.brightness = config.led.brightness !== undefined ? config.led.brightness : 100;
+        // Optionally restore last color/mode
+        if (config.led.lastColor) ledState.color = config.led.lastColor;
+        if (config.led.lastMode) ledState.mode = config.led.lastMode;
+        if (config.led.gradient) ledState.customGradient = config.led.gradient;
+    } else {
+        // Default init
+        ledState.userPresets = new Array(7).fill(null);
+    }
+
+    document.body.setAttribute('data-theme', theme);
+    const themeSelector = document.getElementById('theme-selector-floating');
+    if (themeSelector) themeSelector.value = theme;
+
+    changeLanguage(language);
+    updateKeyVisuals();
+    checkEmptyState();
+    updateUIFromState(); // Sync LED controls
+});
+
 
 // Theme update from settings
 if (themeSelectorFloating) {
@@ -575,4 +1210,13 @@ function checkEmptyState() {
 }
 
 // Initial check
-setTimeout(checkEmptyState, 500);
+setTimeout(() => {
+    checkEmptyState();
+    // Ensure presets grid is rendered even before config loads (shows gray slots)
+    // If config comes later, it will re-render with saved colors.
+    if (userPresetsGrid && userPresetsGrid.children.length === 0) {
+        // Initialize with nulls if empty array
+        if (ledState.userPresets.length === 0) ledState.userPresets = new Array(7).fill(null);
+        renderUserPresets();
+    }
+}, 100);

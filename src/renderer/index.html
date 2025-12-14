@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VortexMacroApp</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="dual-color.css">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -144,6 +145,17 @@
                 </svg>
             </button>
 
+            <!-- LED Control Button -->
+            <button id="led-btn" class="floating-icon-btn" title="LED Control">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18h6" />
+                    <path d="M10 22h4" />
+                    <path
+                        d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z" />
+                </svg>
+            </button>
+
             <!-- Settings Floating Panel -->
             <div class="floating-panel settings-panel" id="settings-panel">
                 <div class="panel-header">
@@ -217,6 +229,115 @@
 
                 <div class="setting-footer">
                     <span class="version-text">Vortex v2.0</span>
+                </div>
+            </div>
+
+            <!-- LED Control Panel -->
+            <div class="floating-panel led-panel" id="led-panel">
+                <div class="panel-header">
+                    <h3 data-i18n="ledControl">LED Control</h3>
+                    <button id="close-led" class="close-icon">&times;</button>
+                </div>
+
+                <!-- 1. Effect Selector (Top) -->
+                <div class="control-section">
+                    <div class="input-group-horizontal">
+                        <label class="section-label" data-i18n="ledEffectLabel">Effect:</label>
+                        <select id="led-mode-selector" class="premium-select">
+                            <option value="static" data-i18n="mode_static" selected>Static Color</option>
+                            <option value="breathing" data-i18n="mode_breathing">Breathing</option>
+                            <option value="circular" data-i18n="mode_circular">Circular Rotate</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 2. Main Color Controls (Wheel + Inputs + Preview) -->
+                <div class="color-control-main" id="static-color-controls">
+                    <!-- Color Wheel Area -->
+                    <div class="color-wheel-container">
+                        <canvas id="color-wheel-canvas" width="150" height="150"></canvas>
+                        <!-- Hidden input for form compatibility/fallback if needed, or just remove -->
+                    </div>
+
+                    <!-- RGB Inputs -->
+                    <div class="rgb-inputs-container">
+                        <div class="rgb-input-group">
+                            <label>R</label>
+                            <input type="number" id="rgb-r" min="0" max="255" value="0">
+                        </div>
+                        <div class="rgb-input-group">
+                            <label>G</label>
+                            <input type="number" id="rgb-g" min="0" max="255" value="240">
+                        </div>
+                        <div class="rgb-input-group">
+                            <label>B</label>
+                            <input type="number" id="rgb-b" min="0" max="255" value="240">
+                        </div>
+                    </div>
+
+                    <!-- Color Preview -->
+                    <div class="color-preview-box">
+                        <label data-i18n="ledColorPreview">COLOR 1</label>
+                        <div id="color-preview-display" class="preview-swatch"></div>
+                    </div>
+                </div>
+
+                <!-- 2b. Dual Color Controls (Hidden by default) -->
+                <div class="color-control-main" id="dual-color-controls"
+                    style="display: none; flex-direction: column; align-items: stretch;">
+                    <div style="text-align: center; margin-bottom: 5px; font-size: 0.8rem; color: var(--text-muted);">
+                        Select Two Colors</div>
+                    <div style="display: flex; justify-content: space-around; width: 100%;">
+                        <div class="color-pick-group">
+                            <label>Color 1</label>
+                            <input type="color" id="grad-color-1" value="#ff0000">
+                        </div>
+                        <div class="color-pick-group">
+                            <label>Color 2</label>
+                            <input type="color" id="grad-color-2" value="#0000ff">
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <!-- 3. Your Colors (User Presets) -->
+                <div class="control-section" id="user-presets-section">
+                    <div class="section-header-line">
+                        <span data-i18n="ledUserPresets">YOUR COLORS</span>
+                    </div>
+                    <div class="preset-grid" id="user-presets-grid">
+                        <!-- First item is always 'Add' -->
+                        <!-- Dynamic user presets will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- 4. Factory Presets -->
+                <div class="control-section" id="factory-presets-section">
+                    <div class="section-header-line">
+                        <span data-i18n="ledFactoryPresets">PRESET COLORS</span>
+                    </div>
+                    <div class="preset-grid" id="factory-presets-grid">
+                        <button class="preset-btn" data-color="#ff0000" style="background: #ff0000;"></button>
+                        <button class="preset-btn" data-color="#00ff00" style="background: #00ff00;"></button>
+                        <button class="preset-btn" data-color="#0000ff" style="background: #0000ff;"></button>
+                        <button class="preset-btn" data-color="#ffff00" style="background: #ffff00;"></button>
+                        <button class="preset-btn" data-color="#00ffff" style="background: #00ffff;"></button>
+                        <button class="preset-btn" data-color="#ff00ff" style="background: #ff00ff;"></button>
+                        <button class="preset-btn" data-color="#ffffff" style="background: #ffffff;"></button>
+                        <button class="preset-btn" data-color="#ffaa00" style="background: #ffaa00;"></button>
+
+                    </div>
+                </div>
+
+                <!-- 5. Brightness Slider -->
+                <div class="control-section">
+                    <div class="section-header-line">
+                        <span data-i18n="ledBrightness">BRIGHTNESS</span>
+                    </div>
+                    <div class="brightness-control">
+                        <input type="range" id="led-brightness" min="0" max="100" value="100" class="premium-slider">
+                    </div>
                 </div>
             </div>
 

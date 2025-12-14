@@ -1,0 +1,47 @@
+/* Dual Color Controls */
+#dual-color-controls .color-pick-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    width: 45%;
+}
+
+#dual-color-controls .color-pick-group label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#dual-color-controls input[type="color"] {
+    -webkit-appearance: none;
+    appearance: none;
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    cursor: pointer;
+    background: none;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s;
+}
+
+#dual-color-controls input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+#dual-color-controls input[type="color"]::-webkit-color-swatch {
+    border: 2px solid var(--border);
+    border-radius: 50%;
+}
+
+#dual-color-controls input[type="color"]:hover {
+    transform: scale(1.1);
+}

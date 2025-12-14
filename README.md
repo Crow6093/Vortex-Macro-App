@@ -27,6 +27,21 @@ Vortex ofrece 4 tipos de macros potentes para cubrir todas tus necesidades:
 *   **Visualización en Tiempo Real**: Las teclas se iluminan en la pantalla cuando pulsas tu dispositivo físico.
 *   **Indicadores de Estado**: Feedback visual inmediato sobre la conexión de tu dispositivo.
 
+### 💡 Control RGB Avanzado
+Vortex V2 libera todo el potencial de tu hardware con un control de iluminación LED de última generación:
+
+*   **Modos de Iluminación**:
+    *   **Estático**: Elige cualquier color sólido de la rueda de colores.
+    *   **Respiración (Breathing)**: Efecto suave de pulsación con cualquier color.
+    *   **Circular Rotate**: Efecto dinámico que rota entre **dos colores** seleccionados por ti.
+    *   **Split Mode**: Divide el teclado en dos zonas de color (ej. Lila/Azul).
+*   **Gestión de Energía**: Ajusta el brillo global o apaga los LEDs completamente.
+*   **Persistencia Total**: La app recuerda tu modo, colores y brillo al reiniciar.
+*   **Sincronización Visual**: El teclado virtual en la app replica exactamente el efecto de tu teclado físico (incluyendo gradientes rotativos).
+
+![Menú RGB](assets/LedSettings.png)
+> *Panel de control RGB con selección de modo y colores.*
+
 ### 🌍 Internacionalización (i18n)
 *   **Soporte Multilenguaje**: Cambia al instante entre **Inglés (🇬🇧)** y **Español (🇪🇸)**.
 *   **Selector Visual**: Iconos de banderas redondos y elegantes con efectos hover para cambiar de idioma rápidamente.
