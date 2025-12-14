@@ -1,0 +1,32 @@
+/* Base Hover Fix for Standard Keys (Dark/Default) */
+.key-btn.anim-vortex:hover::after {
+    background: var(--key-bg);
+    filter: brightness(1.3);
+}
+
+/* Fix for White Variant Keys */
+.key-btn.variant-white.anim-vortex::after {
+    background: var(--key-bg-white) !important;
+}
+
+.key-btn.variant-white.anim-vortex:hover::after {
+    background: var(--key-bg-white) !important;
+    filter: brightness(0.95);
+    /* Slight darken for white keys on hover */
+}
+
+/* Fix for Orange Variant Keys */
+.key-btn.variant-orange.anim-vortex::after {
+    background: var(--key-bg-orange) !important;
+}
+
+.key-btn.variant-orange.anim-vortex:hover::after {
+    background: var(--key-bg-orange) !important;
+    filter: brightness(1.1);
+}
+
+/* Ensure Active/Selected state doesn't break mask either */
+.key-btn.anim-vortex.active::after {
+    /* Ensure mask stays consistent even if active adds styling */
+    /* No change needed if variants are handled above, but good to be safe */
+}
