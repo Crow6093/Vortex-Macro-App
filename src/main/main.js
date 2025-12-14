@@ -320,31 +320,33 @@ if (!gotTheLock) {
                 const speed = 0.05; // Ajustar velocidad
                 const t = (Math.sin(animationTick * speed) + 1) / 2;
 
-                // Min brightness 10%, Max 100% (or user brightness)
-                const userBrightness = (data.brightness !== undefined) ? data.brightness : 100;
-                const minB = 0.1;
-                const maxB = 1.0;
+                step += 0.08; // Faster increment for ~1.5s cycle (2PI / 0.08 * 20ms ~= 1.5s)
 
-                // Effective Scale
-                const breathScale = (minB + (maxB - minB) * t) * (userBrightness / 100);
+                // Calculate brightness using Sine wave (0 to 1)
+                // (Math.sin(step) + 1) / 2 ranges from 0 to 1
+                // We want range 0.1 to 1.0 (min brightness 10%)
+                const wave = (Math.sin(step) + 1) / 2;
+                const currentScale = 0.1 + (wave * 0.9);
 
-                let r = 0, g = 0, b = 0;
-                if (data.color) {
-                    r = parseInt(data.color.substr(1, 2), 16);
-                    g = parseInt(data.color.substr(3, 2), 16);
-                    b = parseInt(data.color.substr(5, 2), 16);
+                // Apply scale to base colors
+                const br = Math.floor(sr * currentScale);
+                const bg = Math.floor(sg * currentScale);
+                const bb = Math.floor(sb * currentScale);
+
+                // Send Static Color Command (0x01)
+                try {
+                    // Check if HID is available? For now we assume yes or it throws/catches
+                    // Using writeBatch or direct write? processLedUpdate logic above used writeBatch
+                    // But here we are inside the loop. let's re-use writeBatch
+                    const packet = [0x01, br, bg, bb];
+                    writeBatch([packet]);
+                } catch (err) {
+                    console.error('Animation Error:', err);
+                    clearInterval(animationInterval);
                 }
-
-                const sr = Math.floor(r * breathScale);
-                const sg = Math.floor(g * breathScale);
-                const sb = Math.floor(b * breathScale);
-
-                // Send Static Color (0x01)
-                // This forces firmware to Mode 1 (Static) and sets color
-                writeBatch([[0x01, sr, sg, sb]]);
             }
 
-        }, intervalMs);
+        }, 20); // 20ms = 50fps for smoothness
     };
 
     const processLedUpdate = async (data) => {

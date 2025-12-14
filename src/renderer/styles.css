@@ -1178,7 +1178,7 @@ input:checked+.slider:before {
 }
 
 .key-btn.anim-breathing {
-    animation: breathing-effect 3s ease-in-out infinite;
+    animation: breathing-effect 1.5s ease-in-out infinite;
 }
 
 /* Rainbow Effect */
