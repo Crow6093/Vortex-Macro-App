@@ -66,7 +66,6 @@ const textDictionary = {
         ledModeRainbow: "Arcoíris",
         ledModeCycle: "Ciclo Espectral",
         ledModeReactive: "Reactivo (Toque)",
-        ledModeReactive: "Reactivo (Toque)",
         // LED Panel Labels
         ledEffectLabel: "Efecto:",
         ledColorPreview: "COLOR ACTUAL",
@@ -111,7 +110,6 @@ const textDictionary = {
         ledModeStatic: "Static Color",
         ledModeRainbow: "Rainbow",
         ledModeCycle: "Spectrum Cycle",
-        ledModeReactive: "Reactive (Touch)",
         ledModeReactive: "Reactive (Touch)",
         // LED Panel Labels
         ledEffectLabel: "Effect:",
@@ -169,7 +167,6 @@ function changeLanguage(lang) {
             if (opt.value === 'static') opt.text = texts.ledModeStatic;
             if (opt.value === 'rainbow') opt.text = texts.ledModeRainbow;
             if (opt.value === 'cycle') opt.text = texts.ledModeCycle;
-            if (opt.value === 'reactive') opt.text = texts.ledModeReactive;
             if (opt.value === 'reactive') opt.text = texts.ledModeReactive;
         }
     }
@@ -510,10 +507,7 @@ ipcRenderer.on('macro-saved-success', (event, data) => {
     }
 });
 
-function getMacroDataFromForm() {
-    // Deprecated by inline logic above or keep for cleanliness
-    return {};
-}
+
 
 // Device Status Handler
 const statusLight = document.getElementById('device-status-light');

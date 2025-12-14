@@ -19,17 +19,7 @@ if (!gotTheLock) {
         }
     });
 
-    // State for Software Animations
-    let breathingInterval = null;
 
-    // Helper to scale color brightness
-    function scaleColor(r, g, b, factor) {
-        return {
-            r: Math.floor(r * factor),
-            g: Math.floor(g * factor),
-            b: Math.floor(b * factor)
-        };
-    }
 
     if (require('electron-squirrel-startup')) {
         app.quit();
@@ -53,8 +43,8 @@ if (!gotTheLock) {
     const checkDevice = () => {
         if (!HID) return false;
         try {
-            const devices = HID.devices();
-            return devices.some(d => d.vendorId === MACROPAD_VID && d.productId === MACROPAD_PID);
+            // Re-use logic to check availability
+            return getAllDevices().length > 0;
         } catch (e) {
             console.error('Error scanning devices:', e);
             return false;
@@ -233,7 +223,6 @@ if (!gotTheLock) {
                         while (packet33.length < 33) packet33.push(0x00);
                         dev.write(packet33);
                     } catch (e1) {
-                        // Fallback: Try 65 bytes
                         try {
                             const packet65 = [0x00, ...data];
                             while (packet65.length < 65) packet65.push(0x00);
@@ -242,15 +231,11 @@ if (!gotTheLock) {
                     }
                 }
             } catch (err) {
-                // console.warn(`Error writing to device:`, err.message);
             } finally {
                 if (dev) dev.close();
             }
         }
     };
-
-    // Kept for backward compatibility
-    const writePacket = (ignored, data) => writeBatch([data]);
 
     // State for Software Animations
     let animationInterval = null;
@@ -260,6 +245,20 @@ if (!gotTheLock) {
     const startAnimation = (data) => {
         if (animationInterval) clearInterval(animationInterval);
         animationTick = 0;
+        let step = 0; // Initialize step for breathing
+
+        // Parse Color and Brightness for Breathing Mode
+        let r = 0, g = 0, b = 0;
+        if (data.color) {
+            r = parseInt(data.color.substr(1, 2), 16);
+            g = parseInt(data.color.substr(3, 2), 16);
+            b = parseInt(data.color.substr(5, 2), 16);
+        }
+        const brightness = (data.brightness !== undefined) ? data.brightness : 100;
+        const baseScale = brightness / 100;
+        const sr = Math.floor(r * baseScale);
+        const sg = Math.floor(g * baseScale);
+        const sb = Math.floor(b * baseScale);
 
         // Run at ~20 FPS for smoothness
         const FPS = 20;
@@ -291,8 +290,8 @@ if (!gotTheLock) {
                 };
                 const rgb1 = hex2rgb(c1);
                 const rgb2 = hex2rgb(c2);
-                const brightness = (data.brightness !== undefined) ? data.brightness : 100;
-                const scale = brightness / 100;
+
+                const scale = brightness / 100; // Use local brightness
 
                 let ledColors = [];
                 for (let i = 0; i < 12; i++) {
@@ -314,30 +313,19 @@ if (!gotTheLock) {
 
             // --- BREATHING MODE (Software) ---
             if (data.mode === 'breathing') {
-                // Period = 4 seconds (approx) -> 0.25 Hz
-                // t = (sin(time) + 1) / 2
-                // time = tick * speed
-                const speed = 0.05; // Ajustar velocidad
-                const t = (Math.sin(animationTick * speed) + 1) / 2;
-
-                step += 0.08; // Faster increment for ~1.5s cycle (2PI / 0.08 * 20ms ~= 1.5s)
+                step += 0.08; // Increment phase
 
                 // Calculate brightness using Sine wave (0 to 1)
-                // (Math.sin(step) + 1) / 2 ranges from 0 to 1
-                // We want range 0.1 to 1.0 (min brightness 10%)
                 const wave = (Math.sin(step) + 1) / 2;
                 const currentScale = 0.1 + (wave * 0.9);
 
-                // Apply scale to base colors
+                // Apply scale to base colors (sr, sg, sb calculated above)
                 const br = Math.floor(sr * currentScale);
                 const bg = Math.floor(sg * currentScale);
                 const bb = Math.floor(sb * currentScale);
 
                 // Send Static Color Command (0x01)
                 try {
-                    // Check if HID is available? For now we assume yes or it throws/catches
-                    // Using writeBatch or direct write? processLedUpdate logic above used writeBatch
-                    // But here we are inside the loop. let's re-use writeBatch
                     const packet = [0x01, br, bg, bb];
                     writeBatch([packet]);
                 } catch (err) {
@@ -375,8 +363,7 @@ if (!gotTheLock) {
 
         // 1. Static Color -> Command 0x01
         if (data.mode === 'static') {
-            // Command 0x01: [0x01, R, G, B]
-            writePacket(null, [0x01, sr, sg, sb]);
+            writeBatch([[0x01, sr, sg, sb]]);
             return;
         }
 
@@ -467,7 +454,7 @@ if (!gotTheLock) {
     });
 
     // Backward compat
-    const sendToDevice = (data) => writePacket(null, data);
+    const sendToDevice = (data) => writeBatch([data]);
 
     ipcMain.on('select-file', async (event) => {
         const result = await dialog.showOpenDialog(mainWindow, {
