@@ -66,6 +66,18 @@ if (!gotTheLock) {
         if (mainWindow) mainWindow.webContents.send('device-status', isConnected);
     }, 2000);
 
+    // Helper for Cross-Platform Icons
+    const getIconPath = (forTray = false) => {
+        if (process.platform === 'linux') return path.join(__dirname, '../../assets/icon.png');
+        if (process.platform === 'darwin') {
+            // macOS Tray usually is a template image, but we use png/icns for now based on context
+            // Tray: png/template is better. App: icns is required.
+            if (forTray) return path.join(__dirname, '../../assets/icon.png');
+            return path.join(__dirname, '../../assets/iconoMac.icns');
+        }
+        return path.join(__dirname, '../../assets/icono.ico');
+    };
+
     const createWindow = () => {
         mainWindow = new BrowserWindow({
             width: 800,
@@ -77,7 +89,7 @@ if (!gotTheLock) {
                 nodeIntegration: true,
                 contextIsolation: false,
             },
-            icon: path.join(__dirname, '../../assets/icono.ico'),
+            icon: getIconPath(false),
             autoHideMenuBar: true,
         });
 
@@ -129,7 +141,7 @@ if (!gotTheLock) {
     };
 
     const createTray = () => {
-        const iconPath = path.join(__dirname, '../../assets/icono.ico');
+        const iconPath = getIconPath(true); // For tray
         tray = new Tray(iconPath);
         const contextMenu = Menu.buildFromTemplate([
             { label: 'Show App', click: () => mainWindow.show() },

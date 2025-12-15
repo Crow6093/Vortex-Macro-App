@@ -47,6 +47,18 @@
       "installerIcon": "assets/icono.ico",
       "uninstallerIcon": "assets/icono.ico",
       "installerHeaderIcon": "assets/icono.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "assets/icon.png",
+      "category": "Utility"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.productivity"
     }
   }
 }
