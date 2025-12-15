@@ -70,15 +70,20 @@ if (!gotTheLock) {
     const getIconPath = (forTray = false) => {
         if (process.platform === 'linux') return path.join(__dirname, '../../assets/icon.png');
         if (process.platform === 'darwin') {
-            // macOS Tray usually is a template image, but we use png/icns for now based on context
-            // Tray: png/template is better. App: icns is required.
             if (forTray) return path.join(__dirname, '../../assets/icon.png');
-            return path.join(__dirname, '../../assets/iconoMac.icns');
+            return path.join(__dirname, '../../assets/icon.icns');
         }
         return path.join(__dirname, '../../assets/icono.ico');
     };
 
     const createWindow = () => {
+        const iconPath = getIconPath(false);
+
+        // Explicitly set Dock Icon on macOS (Runtime)
+        if (process.platform === 'darwin' && app.dock) {
+            app.dock.setIcon(iconPath);
+        }
+
         mainWindow = new BrowserWindow({
             width: 800,
             height: 600,
@@ -89,7 +94,7 @@ if (!gotTheLock) {
                 nodeIntegration: true,
                 contextIsolation: false,
             },
-            icon: getIconPath(false),
+            icon: iconPath,
             autoHideMenuBar: true,
         });
 

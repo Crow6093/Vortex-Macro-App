@@ -130,17 +130,23 @@ $type = Add-Type -MemberDefinition $code -Name "Win32Input" -Namespace Win32Func
             spawn('osascript', ['-e', appleScript]);
 
         } else if (process.platform === 'linux') {
-            // Linux: xdotool
-            const args = [];
+            // Linux: xdotool via Stdin (to avoid argument length limits)
+            const xdotool = spawn('xdotool', ['-']);
 
-            // Check for xdotool presence implicitly by catching spawn error or similar? 
-            // Better: just try to run it. If it fails, we log.
+            xdotool.on('error', (err) => {
+                if (err.code === 'ENOENT') {
+                    console.error('Error: xdotool not found. Please install it (e.g., sudo apt-get install xdotool)');
+                } else {
+                    console.error('xdotool error:', err);
+                }
+            });
+
+            xdotool.stdin.on('error', (err) => console.error('xdotool stdin error:', err));
 
             macro.sequence.forEach(step => {
                 const delay = (step.delay > 0 ? step.delay : 5) / 1000;
-                if (delay > 0) args.push('sleep', delay.toString());
+                if (delay > 0) xdotool.stdin.write(`sleep ${delay}\n`);
 
-                // Map Code/Key to xdotool friendly names
                 let k = step.key;
                 const map = {
                     'Enter': 'Return', 'Backspace': 'BackSpace', 'Tab': 'Tab', 'Escape': 'Escape', 'Space': 'space',
@@ -157,23 +163,14 @@ $type = Add-Type -MemberDefinition $code -Name "Win32Input" -Namespace Win32Func
                 if (map[step.code]) k = map[step.code];
                 else if (map[step.key]) k = map[step.key];
 
-                // Quote if specialized chars? xdotool handles mostly fine.
-
                 if (step.type === 'down') {
-                    args.push('keydown', k);
+                    xdotool.stdin.write(`keydown ${k}\n`);
                 } else {
-                    args.push('keyup', k);
+                    xdotool.stdin.write(`keyup ${k}\n`);
                 }
             });
 
-            const child = spawn('xdotool', args);
-            child.on('error', (err) => {
-                if (err.code === 'ENOENT') {
-                    console.error('Error: xdotool not found. Please install it (e.g., sudo apt-get install xdotool) to use automation on Linux.');
-                } else {
-                    console.error('xdotool error:', err);
-                }
-            });
+            xdotool.stdin.end();
         }
     }
 };

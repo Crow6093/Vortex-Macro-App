@@ -22,6 +22,8 @@ module.exports = {
             }
         }
 
-        shell.openExternal(target);
+        shell.openExternal(target).catch(err => {
+            console.error('Failed to open URL:', target, err);
+        });
     }
 };
