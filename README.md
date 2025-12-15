@@ -2,7 +2,7 @@
 
 ![Vortex Main UI](assets/mainUi.png)
 
-**Vortex Macro V2** es una potente aplicación de gestión de macros diseñada para maximizar tu productividad y experiencia de juego. Con una interfaz moderna, oscuray totalmente personalizable, Vortex te permite asignar acciones complejas a cada tecla de tu dispositivo Vortex.
+**Vortex Macro V2** es una potente aplicación de gestión de macros diseñada para maximizar tu productividad y experiencia de juego. Con una interfaz moderna, oscura y totalmente personalizable, Vortex te permite asignar acciones complejas a cada tecla de tu dispositivo Vortex.
 
 ## ✨ Características Principales
 
@@ -11,9 +11,10 @@ Vortex ofrece 4 tipos de macros potentes para cubrir todas tus necesidades:
 
 *   **🌐 Web / Búsqueda**: Abre cualquier página web al instante o realiza búsquedas rápidas en Google.
 *   **📂 Abrir Programa (Launcher)**:
-    *   **Detección Automática**: Escanea tu sistema (Windows, macOS, Linux) para listar tus aplicaciones instaladas.
-    *   **Selector Inteligente**: Elige tu programa de una lista desplegable sin buscar rutas manualmente.
-    *   **Soporte Custom**: ¿Programa portable? Usa el explorador de archivos para seleccionarlo.
+    *   **Inteligente y Multiplataforma**: La interfaz se adapta a tu sistema operativo.
+        *   **Windows**: Detecta automáticamente tus programas instalados y ofrece un selector desplegable rápido, además de selección manual.
+        *   **macOS / Linux**: Interfaz simplificada y directa para selección de rutas personalizadas.
+    *   **Soporte Universal**: Compatible con ejecutables portables o scripts específicos.
 *   **🔴 Grabadora (Recorder)**:
     *   **Alta Fidelidad**: Graba **exactamente** lo que haces, incluyendo cuánto tiempo mantienes pulsada una tecla.
     *   **Combinaciones**: Soporte total para `Ctrl+C`, `Alt+Tab` y atajos complejos con teclas modificadoras.
@@ -22,7 +23,9 @@ Vortex ofrece 4 tipos de macros potentes para cubrir todas tus necesidades:
 
 ![Configuración de Macro](assets/Settings.png)
 
-### 🎨 Diseño Premium
+### 🎨 Diseño Premium con UX Refinada
+*   **Paneles Exclusivos**: Sistema de navegación inteligente que evita el desorden visual. Abrir un panel (Ajustes, LED, Volumen) cierra automáticamente los demás para que te concentres en lo importante.
+*   **Interfaz Nativa en macOS**: Ventana sin bordes perfectamente integrada, ocultando los controles "traffic light" nativos para una estética 100% personalizada.
 *   **Tema Adaptable**: Interfaz que respeta tu preferencia de tema (Claro/Oscuro), con un diseño Glassmorphism moderno.
 *   **Visualización en Tiempo Real**: Las teclas se iluminan en la pantalla cuando pulsas tu dispositivo físico.
 *   **Indicadores de Estado**: Feedback visual inmediato sobre la conexión de tu dispositivo.
@@ -33,24 +36,22 @@ Vortex V2 libera todo el potencial de tu hardware con un control de iluminación
 *   **Modos de Iluminación**:
     *   **Estático**: Elige cualquier color sólido de la rueda de colores.
     *   **Respiración (Breathing)**: Efecto suave de pulsación con cualquier color.
-    *   **Circular Rotate**: Efecto dinámico que rota entre **dos colores** seleccionados por ti.
+    *   **Circular Rotate / Vortex**: Efecto dinámico que rota entre **dos colores** seleccionados por ti. ¡Define tu propio gradiente!
     *   **Split Mode**: Divide el teclado en dos zonas de color (ej. Lila/Azul).
 *   **Gestión de Energía**: Ajusta el brillo global o apaga los LEDs completamente.
-*   **Persistencia Total**: La app recuerda tu modo, colores y brillo al reiniciar.
-*   **Sincronización Visual**: El teclado virtual en la app replica exactamente el efecto de tu teclado físico (incluyendo gradientes rotativos).
+*   **Sincronización Visual**: El teclado virtual en la app replica exactamente el efecto de tu teclado físico.
 
 ![Menú RGB](assets/LedSettings.png)
 > *Panel de control RGB con selección de modo y colores.*
 
+### 🔊 panel de Control de Volumen
+Gestiona el comportamiento del Encoder rotatorio dedicado:
+*   **Activar/Desactivar**: Decide si la ruedita controla el volumen del sistema.
+*   **Gestión de Mute**: Configura el comportamiento del pulsador central.
+
 ### 🌍 Internacionalización (i18n)
 *   **Soporte Multilenguaje**: Cambia al instante entre **Inglés (🇬🇧)** y **Español (🇪🇸)**.
-*   **Selector Visual**: Iconos de banderas redondos y elegantes con efectos hover para cambiar de idioma rápidamente.
-*   **Traducción Completa**: Toda la interfaz, incluyendo ajustes, instrucciones y tipos de macro, está completamente traducida.
-
-### 💾 Persistencia Robusta
-*   **Auto-Guardado**: Tu idioma, tema y macros se guardan automáticamente en `config.json`.
-*   **Restauración de Estado**: La app recuerda tu configuración exacta al reiniciar, incluyendo el idioma seleccionado.
-*   **Detección de Hardware**: Detecta automáticamente tu **Vortex V2.0** (VID: `0xfeed`, PID: `0x6060`) y gestiona la conexión.
+*   **Persistencia**: La aplicación recuerda tu idioma preferido entre reinicios.
 
 ## 🛠️ Instalación y Uso
 
@@ -61,6 +62,7 @@ Vortex V2 libera todo el potencial de tu hardware con un control de iluminación
 2.  **Instalación**:
     ```bash
     npm install
+    # Si hay vulnerabilidades, el proyecto usa las ultimas versiones seguras.
     ```
 
 3.  **Iniciar Aplicación**:
@@ -76,10 +78,11 @@ Vortex V2 libera todo el potencial de tu hardware con un control de iluminación
 ## 🎮 Compatibilidad y Configuración Adicional
 
 *   **Windows**: 
-    *   Soporte nativo "Out of the Box".
+    *   Soporte nativo "Out of the Box" con detección de programas instalados.
     *   Usa inyección de teclas a bajo nivel (`keybd_event`) para máxima compatibilidad con juegos.
 
 *   **macOS**: 
+    *   Interfaz optimizada sin controles de ventana nativos.
     *   Integración fluida con AppleScript.
     *   ⚠️ **Importante**: Al ejecutar la app por primera vez, macOS solicitará permisos de **Accesibilidad**. Debes concederlos para que Vortex pueda simular pulsaciones de teclas y clics.
 
@@ -98,4 +101,5 @@ Vortex V2 libera todo el potencial de tu hardware con un control de iluminación
         ```
 
 ---
-*Diseñado para Power Users y Gamers.*
+*Diseñado por Crow6093 para Power Users y Gamers.*
+*Actualizado a Electron v39+ para máxima seguridad y rendimiento.*

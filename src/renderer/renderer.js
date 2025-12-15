@@ -267,7 +267,10 @@ keys.forEach(key => {
 
         // Close other panels
         if (ledPanel) ledPanel.classList.remove('open');
-        if (volumePanel) volumePanel.classList.remove('open');
+        if (volumePanel) {
+            volumePanel.classList.remove('open');
+            if (topRightVisual) topRightVisual.classList.remove('active');
+        }
         if (settingsPanel) settingsPanel.classList.remove('open');
 
         keys.forEach(k => k.classList.remove('active'));
@@ -400,59 +403,78 @@ async function renderMacroSettings(type, existingData = {}) {
     if (type === 'web') {
         container.innerHTML = `<div class="input-group"><label>URL / Search</label><input type="text" id="macro-url" value="${existingData.url || ''}" placeholder="https://... or Search Query"></div>`;
     } else if (type === 'launch') {
-        container.innerHTML = `
-            <div class="input-group">
+        const isWindows = process.platform === 'win32';
+
+        let html = '<div class="input-group">';
+
+        if (isWindows) {
+            html += `
                 <label>${textDictionary[currentLanguage].selectProgram}</label>
                 <select id="program-select" style="margin-bottom: 10px; width: 100%; padding: 8px; border-radius: 6px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border);">
                     <option value="">${textDictionary[currentLanguage].loading}</option>
                 </select>
                 <label>${textDictionary[currentLanguage].orCustomPath}</label>
-                <div class="file-input-wrapper">
-                    <input type="text" id="macro-path" value="${existingData.path || ''}" placeholder="C:/...">
-                    <button class="secondary-btn" id="browse-btn">${textDictionary[currentLanguage].browse}</button>
-                </div>
-            </div>`;
+            `;
+        } else {
+            // Non-Windows: Just a prompt for the path
+            html += `<label>${textDictionary[currentLanguage].selectProgram}</label>`;
+        }
 
-        // Fetch programs
-        const programs = await ipcRenderer.invoke('get-installed-programs');
-        const select = document.getElementById('program-select');
-        if (select) {
-            select.innerHTML = `<option value="custom">${textDictionary[currentLanguage].customApp}</option>`;
+        html += `
+            <div class="file-input-wrapper" style="margin-bottom: 20px;">
+                <input type="text" id="macro-path" value="${existingData.path || ''}" placeholder="C:/...">
+                <button class="secondary-btn" id="browse-btn">${textDictionary[currentLanguage].browse}</button>
+            </div>
+        </div>`;
 
-            programs.forEach(prog => {
-                const opt = document.createElement('option');
-                opt.value = prog.path;
-                opt.textContent = prog.name;
-                select.appendChild(opt);
-            });
+        container.innerHTML = html;
 
-            // If existing data matches one of the programs, select it
-            if (existingData.path) {
-                const match = programs.find(p => p.path === existingData.path);
-                if (match) {
-                    select.value = existingData.path;
+        if (isWindows) {
+            // Fetch programs only on Windows
+            const programs = await ipcRenderer.invoke('get-installed-programs');
+            const select = document.getElementById('program-select');
+            if (select) {
+                select.innerHTML = `<option value="custom">${textDictionary[currentLanguage].customApp}</option>`;
+
+                programs.forEach(prog => {
+                    const opt = document.createElement('option');
+                    opt.value = prog.path;
+                    opt.textContent = prog.name;
+                    select.appendChild(opt);
+                });
+
+                // If existing data matches one of the programs, select it
+                if (existingData.path) {
+                    const match = programs.find(p => p.path === existingData.path);
+                    if (match) {
+                        select.value = existingData.path;
+                    } else {
+                        select.value = "custom";
+                    }
                 } else {
                     select.value = "custom";
                 }
-            } else {
-                select.value = "custom";
+
+                // Handle change
+                select.addEventListener('change', (e) => {
+                    const val = e.target.value;
+                    const pathInput = document.getElementById('macro-path');
+                    if (val !== 'custom') {
+                        pathInput.value = val;
+                    } else {
+                        pathInput.value = '';
+                    }
+                });
             }
+        }
 
-            // Handle change
-            select.addEventListener('change', (e) => {
-                const val = e.target.value;
-                const pathInput = document.getElementById('macro-path');
-                if (val !== 'custom') {
-                    pathInput.value = val;
-                } else {
-                    pathInput.value = '';
-                }
-            });
-
-            // Re-bind browse
-            document.getElementById('browse-btn').addEventListener('click', () => {
+        // Re-bind browse (Always needed)
+        const browseBtn = document.getElementById('browse-btn');
+        if (browseBtn) {
+            browseBtn.addEventListener('click', () => {
                 ipcRenderer.send('select-file');
-                document.getElementById('program-select').value = 'custom';
+                const sel = document.getElementById('program-select');
+                if (sel) sel.value = 'custom';
             });
         }
 
@@ -628,8 +650,13 @@ const themeSelectorFloating = document.getElementById('theme-selector-floating')
 if (settingsBtn) {
     settingsBtn.addEventListener('click', () => {
         settingsPanel.classList.toggle('open');
-        // Mutual Exclusivity: Close LED Panel if open
+        // Mutual Exclusivity: Close LED, Volume, and Config panels
         if (ledPanel) ledPanel.classList.remove('open');
+        if (volumePanel) {
+            volumePanel.classList.remove('open');
+            if (topRightVisual) topRightVisual.classList.remove('active');
+        }
+        closePanel(); // Close Macro Config Panel if open
     });
 }
 
@@ -980,9 +1007,13 @@ function saveLedConfig() {
 if (ledBtn) {
     ledBtn.addEventListener('click', () => {
         ledPanel.classList.toggle('open');
-        // Mutual Exclusivity: Close Settings Panel if open
+        // Mutual Exclusivity: Close Settings and Volume Panel if open
         if (settingsPanel) settingsPanel.classList.remove('open');
-        closePanel(); // Closes main macro panel?
+        if (volumePanel) {
+            volumePanel.classList.remove('open');
+            if (topRightVisual) topRightVisual.classList.remove('active');
+        }
+        closePanel(); // Closes main macro panel
     });
 }
 

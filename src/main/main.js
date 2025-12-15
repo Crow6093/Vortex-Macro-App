@@ -63,7 +63,6 @@ if (!gotTheLock) {
             minWidth: 800,
             minHeight: 600,
             frame: false,
-            titleBarStyle: 'hidden',
             webPreferences: {
                 nodeIntegration: true,
                 contextIsolation: false,
