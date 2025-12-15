@@ -342,6 +342,45 @@
                 </div>
             </div>
 
+            <!-- Volume Control Panel -->
+            <div class="floating-panel volume-panel" id="volume-panel">
+                <div class="panel-header">
+                    <h3 data-i18n="volumeTitle">Volume Control</h3>
+                    <button id="close-volume" class="close-icon">&times;</button>
+                </div>
+                <!-- Controls -->
+                <div class="control-section" style="padding: 20px 0;">
+                    <div class="input-group-horizontal" style="justify-content: space-between;">
+                        <label class="section-label" data-i18n="volumeEnable">Enable Volume Control</label>
+                        <label class="switch">
+                            <input type="checkbox" id="volume-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Volume Rotation Illustration -->
+                    <img src="../../assets/EnderVolum.svg" class="volume-icon" alt="Volume Rotation Guide"
+                        data-i18n-title="volumeDesc">
+
+                    <div class="input-group-horizontal" style="justify-content: space-between;">
+                        <label class="section-label" data-i18n="volumeMute">Click to Mute</label>
+                        <label class="switch">
+                            <input type="checkbox" id="volume-mute-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Mute Click Illustration -->
+                    <img src="../../assets/EncoderMute.svg" class="volume-icon" alt="Mute Click Guide"
+                        data-i18n-title="volumeMuteDesc">
+                </div>
+
+                <div class="panel-actions">
+                    <button class="save-btn" id="save-volume-btn" data-i18n="save">Save</button>
+                    <!-- <button class="secondary-btn" id="manage-audio-btn">Audio Settings</button> Possible future feature -->
+                </div>
+            </div>
+
         </main>
     </div>
 

@@ -73,7 +73,14 @@ const textDictionary = {
         ledFactoryPresets: "PREDETERMINADOS",
         ledBrightness: "BRILLO",
         ledGradStart: "Inicio",
-        ledGradEnd: "Fin"
+        ledGradStart: "Inicio",
+        ledGradEnd: "Fin",
+        // Volume Panel
+        volumeTitle: "Control de Volumen",
+        volumeEnable: "Activar Control de Volumen",
+        volumeDesc: "Al activar, girar esta ruedita ajustará el volumen del sistema.",
+        volumeMute: "Click para Mutear",
+        volumeMuteDesc: "Presionar la ruedita activará/desactivará el silencio."
     },
     en: {
         settingsTitle: "Settings",
@@ -118,7 +125,14 @@ const textDictionary = {
         ledFactoryPresets: "PRESET COLORS",
         ledBrightness: "BRIGHTNESS",
         ledGradStart: "Start",
-        ledGradEnd: "End"
+        ledGradStart: "Start",
+        ledGradEnd: "End",
+        // Volume Panel
+        volumeTitle: "Volume Control",
+        volumeEnable: "Enable Volume Control",
+        volumeDesc: "When enabled, rotating this knob will adjust the system volume.",
+        volumeMute: "Click to Mute",
+        volumeMuteDesc: "Pressing the knob will toggle mute."
     }
 };
 
@@ -132,6 +146,12 @@ function changeLanguage(lang) {
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.dataset.i18n;
         if (texts[key]) el.textContent = texts[key];
+    });
+
+    // Update title attributes (Tooltip)
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.dataset.i18nTitle;
+        if (texts[key]) el.title = texts[key];
     });
 
     // Update specific elements with placeholders or complex logic
@@ -245,6 +265,11 @@ keys.forEach(key => {
             return;
         }
 
+        // Close other panels
+        if (ledPanel) ledPanel.classList.remove('open');
+        if (volumePanel) volumePanel.classList.remove('open');
+        if (settingsPanel) settingsPanel.classList.remove('open');
+
         keys.forEach(k => k.classList.remove('active'));
         key.classList.add('active');
         selectedKey = key.dataset.key;
@@ -252,6 +277,75 @@ keys.forEach(key => {
         openConfigPanel(selectedKey, e.target);
     });
 });
+
+// Top Right Visual (Volume/Knob) Listener
+const topRightVisual = document.getElementById('top-right-visual');
+const volumePanel = document.getElementById('volume-panel');
+const closeVolumeBtn = document.getElementById('close-volume');
+const saveVolumeBtn = document.getElementById('save-volume-btn');
+const volumeToggle = document.getElementById('volume-toggle');
+
+const term_knob = document.getElementById('top-right-visual'); // Just reusing var name is fine but let's stick to definition
+const volumeMuteToggle = document.getElementById('volume-mute-toggle'); // New Ref
+
+if (topRightVisual) {
+    topRightVisual.addEventListener('click', (e) => {
+        // Toggle volume panel
+        if (volumePanel.classList.contains('open')) {
+            volumePanel.classList.remove('open');
+            topRightVisual.classList.remove('active');
+            return;
+        }
+
+        // Close others
+        closePanel(); // Close standard macro panel
+        if (ledPanel) ledPanel.classList.remove('open');
+        if (settingsPanel) settingsPanel.classList.remove('open');
+
+        // Open Volume Panel
+        volumePanel.classList.add('open');
+        topRightVisual.classList.add('active'); // Add active state for visual feedback
+
+        // Load State
+        const knobMacro = currentMacros['knob_right'];
+        if (knobMacro && knobMacro.type === 'volume') {
+            volumeToggle.checked = knobMacro.active !== false;
+            volumeMuteToggle.checked = knobMacro.mute !== false; // Default true if undefined/missing
+        } else {
+            // Default to enabled if not set
+            volumeToggle.checked = true;
+            volumeMuteToggle.checked = true;
+        }
+    });
+}
+
+if (closeVolumeBtn) {
+    closeVolumeBtn.addEventListener('click', () => {
+        volumePanel.classList.remove('open');
+        if (topRightVisual) topRightVisual.classList.remove('active');
+    });
+}
+
+if (saveVolumeBtn) {
+    saveVolumeBtn.addEventListener('click', () => {
+        const isActive = volumeToggle.checked;
+        const isMuteActive = volumeMuteToggle.checked;
+
+        // Save as a macro with type 'volume'
+        const data = {
+            key: 'knob_right',
+            type: 'volume',
+            active: isActive,
+            mute: isMuteActive
+        };
+
+        ipcRenderer.send('save-macro', data);
+
+        // Visual feedback
+        volumePanel.classList.remove('open');
+        if (topRightVisual) topRightVisual.classList.remove('active');
+    });
+}
 
 const macroActiveToggle = document.getElementById('macro-active-toggle');
 const macroToggleContainer = document.getElementById('macro-toggle-container');

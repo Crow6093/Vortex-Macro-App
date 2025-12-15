@@ -90,6 +90,12 @@ if (!gotTheLock) {
             const language = store.get('language') || 'en';
             const led = store.get('led') || {};
             mainWindow.webContents.send('init-config', { macros, theme, language, led });
+
+            // Restore Knob Config on Startup
+            const knobMacro = macros['knob_right'];
+            if (knobMacro && knobMacro.type === 'volume') {
+                setTimeout(() => sendKnobConfig(knobMacro), 2000); // Wait for connection
+            }
         });
     };
 
@@ -169,6 +175,12 @@ if (!gotTheLock) {
         store.set('macros', macros);
         registerShortcuts();
         console.log('Macro saved:', data);
+
+        // Firmware Integration for Knob
+        if (data.key === 'knob_right') {
+            sendKnobConfig(data);
+        }
+
         event.reply('macro-saved-success', data);
     });
 
@@ -235,6 +247,25 @@ if (!gotTheLock) {
                 if (dev) dev.close();
             }
         }
+    };
+
+    // New Helper: Send Knob Configuration (Command 0x04 & 0x06)
+    const sendKnobConfig = (knobData) => {
+        if (!knobData) return;
+
+        // Command 0x04: Volume Control (1=Enable, 0=Disable)
+        const vol = (knobData.active !== false) ? 1 : 0;
+
+        // Command 0x06: Mute Control (1=Enable, 0=Disable)
+        const mute = (knobData.mute !== false) ? 1 : 0;
+
+        console.log(`Sending Knob Config: Vol=${vol} (Cmd 0x04), Mute=${mute} (Cmd 0x06)`);
+
+        // Send both packets in one batch
+        writeBatch([
+            [0x04, vol],
+            [0x06, mute]
+        ]);
     };
 
     // State for Software Animations
