@@ -23,16 +23,37 @@ for ($i=0; $i -lt ${clicks}; $i++) {
             args = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', psScript];
 
         } else if (process.platform === 'darwin') {
-            // macOS: AppleScript
+            // macOS: JXA (JavaScript for Automation) using CoreGraphics
+            // This is native and reliable, avoiding the need for 'cliclick' or broken 'System Events'
             const delaySeconds = delay / 1000;
-            const appleScript = `
-repeat ${clicks} times
-    tell application "System Events" to click
-    delay ${delaySeconds}
-end repeat
+            const jxaScript = `
+ObjC.import('CoreGraphics');
+ObjC.import('Foundation');
+
+var clicks = ${clicks};
+var delay = ${delaySeconds};
+
+for (var i = 0; i < clicks; i++) {
+    var loc = $.CGEventGetLocation($.CGEventCreate($.nil));
+    
+    // Left Mouse Down (1)
+    var down = $.CGEventCreateMouseEvent($.nil, 1, loc, 0);
+    $.CGEventPost(0, down);
+    
+    // Tiny delay for press registration
+    $.NSThread.sleepForTimeInterval(0.02);
+    
+    // Left Mouse Up (2)
+    var up = $.CGEventCreateMouseEvent($.nil, 2, loc, 0);
+    $.CGEventPost(0, up);
+    
+    if (i < clicks - 1) {
+        $.NSThread.sleepForTimeInterval(delay);
+    }
+}
 `;
             command = 'osascript';
-            args = ['-e', appleScript];
+            args = ['-l', 'JavaScript', '-e', jxaScript];
 
         } else if (process.platform === 'linux') {
             // Linux: xdotool
