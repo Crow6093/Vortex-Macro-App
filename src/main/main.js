@@ -29,6 +29,13 @@ if (!gotTheLock) {
     let tray;
     let isQuitting = false;
 
+    // Cleanup on Quit
+    app.on('before-quit', () => {
+        if (cachedDevice) {
+            try { cachedDevice.close(); } catch (e) { }
+        }
+    });
+
     // Device Detection (Real)
     const MACROPAD_VID = 0xfeed;
     const MACROPAD_PID = 0x6060;
@@ -39,6 +46,9 @@ if (!gotTheLock) {
     } catch (e) {
         console.error('Failed to load node-hid:', e);
     }
+
+    // HID Device Request Cache
+    let cachedDevice = null;
 
     const checkDevice = () => {
         if (!HID) return false;
@@ -218,32 +228,58 @@ if (!gotTheLock) {
         return [];
     };
 
-    // New Helper: Broadcast Batch of Packets to ALL interfaces (Atomic Session)
+    // New Helper: Broadcast Batch of Packets (Persistent Connection)
     const writeBatch = (packets) => {
+        // Validation Packets
+        if (!packets || packets.length === 0) return;
+
+        // 1. Try Cached Device first
+        if (cachedDevice) {
+            try {
+                for (const data of packets) {
+                    try {
+                        const packet33 = [0x00, ...data];
+                        while (packet33.length < 33) packet33.push(0x00);
+                        cachedDevice.write(packet33);
+                    } catch (e1) {
+                        const packet65 = [0x00, ...data];
+                        while (packet65.length < 65) packet65.push(0x00);
+                        cachedDevice.write(packet65);
+                    }
+                }
+                return; // Success
+            } catch (err) {
+                console.error('Write failed, device disconnected?', err);
+                cachedDevice.close();
+                cachedDevice = null;
+            }
+        }
+
+        // 2. If no cache or failed, scan for device (Reconnection Logic)
         const matches = getAllDevices();
         if (matches.length === 0) return;
 
-        for (const info of matches) {
-            let dev = null;
-            try {
-                dev = new HID.HID(info.path);
-                for (const data of packets) {
-                    try {
-                        // Size A: 32 bytes data + 1 byte ID = 33 bytes
-                        const packet33 = [0x00, ...data];
-                        while (packet33.length < 33) packet33.push(0x00);
-                        dev.write(packet33);
-                    } catch (e1) {
-                        try {
-                            const packet65 = [0x00, ...data];
-                            while (packet65.length < 65) packet65.push(0x00);
-                            dev.write(packet65);
-                        } catch (e2) { /* ignore */ }
-                    }
+        try {
+            // Open first match
+            cachedDevice = new HID.HID(matches[0].path);
+
+            // Retry Write
+            for (const data of packets) {
+                try {
+                    const packet33 = [0x00, ...data];
+                    while (packet33.length < 33) packet33.push(0x00);
+                    cachedDevice.write(packet33);
+                } catch (e1) {
+                    const packet65 = [0x00, ...data];
+                    while (packet65.length < 65) packet65.push(0x00);
+                    cachedDevice.write(packet65);
                 }
-            } catch (err) {
-            } finally {
-                if (dev) dev.close();
+            }
+        } catch (err) {
+            console.error('Failed to open/write device:', err);
+            if (cachedDevice) {
+                try { cachedDevice.close(); } catch (e) { }
+                cachedDevice = null;
             }
         }
     };
@@ -544,25 +580,38 @@ if (!gotTheLock) {
             if (platform === 'win32') {
                 const startMenuCommon = path.join(process.env.ProgramData, 'Microsoft/Windows/Start Menu/Programs');
                 const startMenuUser = path.join(process.env.APPDATA, 'Microsoft/Windows/Start Menu/Programs');
-                const scanDir = (dir) => {
-                    if (!fs.existsSync(dir)) return;
-                    const files = fs.readdirSync(dir);
-                    for (const file of files) {
-                        const fullPath = path.join(dir, file);
-                        const stat = fs.statSync(fullPath);
-                        if (stat.isDirectory()) {
-                            scanDir(fullPath);
-                        } else if (file.endsWith('.lnk') || file.endsWith('.url')) {
-                            programs.push({
-                                name: file.replace(/\.(lnk|url)$/, ''),
-                                path: fullPath,
-                                type: 'file'
-                            });
-                        }
-                    }
+
+                // Async Recursive Scan
+                const scanDirAsync = async (dir) => {
+                    try {
+                        await fs.promises.access(dir);
+                        const files = await fs.promises.readdir(dir);
+
+                        const tasks = files.map(async (file) => {
+                            const fullPath = path.join(dir, file);
+                            try {
+                                const stat = await fs.promises.stat(fullPath);
+                                if (stat.isDirectory()) {
+                                    await scanDirAsync(fullPath);
+                                } else if (file.endsWith('.lnk') || file.endsWith('.url')) {
+                                    programs.push({
+                                        name: file.replace(/\.(lnk|url)$/, ''),
+                                        path: fullPath,
+                                        type: 'file'
+                                    });
+                                }
+                            } catch (e) { /* ignore individual file errors */ }
+                        });
+
+                        await Promise.all(tasks);
+                    } catch (e) { /* ignore dir access errors */ }
                 };
-                scanDir(startMenuCommon);
-                scanDir(startMenuUser);
+
+                await Promise.all([
+                    scanDirAsync(startMenuCommon),
+                    scanDirAsync(startMenuUser)
+                ]);
+
             } else if (platform === 'darwin') { /* ... Mac ... */ }
             else if (platform === 'linux') { /* ... Linux ... */ }
         } catch (e) {
