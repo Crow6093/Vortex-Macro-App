@@ -68,7 +68,7 @@ if (!gotTheLock) {
                 nodeIntegration: true,
                 contextIsolation: false,
             },
-            icon: path.join(__dirname, '../../assets/icon.ico'),
+            icon: path.join(__dirname, '../../assets/icono.ico'),
             autoHideMenuBar: true,
         });
 
@@ -114,7 +114,7 @@ if (!gotTheLock) {
     };
 
     const createTray = () => {
-        const iconPath = path.join(__dirname, '../../assets/icon.png');
+        const iconPath = path.join(__dirname, '../../assets/icono.ico');
         tray = new Tray(iconPath);
         const contextMenu = Menu.buildFromTemplate([
             { label: 'Show App', click: () => mainWindow.show() },

@@ -31,7 +31,7 @@
       "output": "dist"
     },
     "win": {
-      "icon": "assets/icon.ico",
+      "icon": "assets/icono.ico",
       "target": [
         "nsis"
       ]
@@ -44,9 +44,9 @@
       "createStartMenuShortcut": true,
       "shortcutName": "Vortex Macro V2",
       "license": "LICENSE.txt",
-      "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico",
-      "installerHeaderIcon": "assets/icon.ico"
+      "installerIcon": "assets/icono.ico",
+      "uninstallerIcon": "assets/icono.ico",
+      "installerHeaderIcon": "assets/icono.ico"
     }
   }
 }
