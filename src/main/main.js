@@ -154,7 +154,11 @@ if (!gotTheLock) {
             ['VolumeUp', 'VolumeDown', 'VolumeMute'].forEach(volKey => {
                 try {
                     globalShortcut.register(volKey, () => {
-                        console.log(`${volKey} intercepted (Knob Auto-Open).`);
+                        console.log(`${volKey} intercepted (Knob Auto-Open). Executing software backup.`);
+
+                        // FIX: Execute software volume change because we consumed the key
+                        Automation.execute({ type: 'volume', action: volKey });
+
                         if (mainWindow && mainWindow.isFocused()) {
                             mainWindow.webContents.send('externally-selected-knob');
                         }
@@ -305,7 +309,7 @@ if (!gotTheLock) {
                     return 0;
                 });
 
-                console.log(`[HID Scan] Found ${matches.length} interfaces. Selected: Path=${matches[0].path}, UsagePage=${matches[0].usagePage}`);
+                // console.log(`[HID Scan] Found ${matches.length} interfaces. Selected: Path=${matches[0].path}, UsagePage=${matches[0].usagePage}`);
                 return matches;
             } else {
                 console.warn('No devices found with VID 0xFEED PID 0x6060');

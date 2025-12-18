@@ -2,6 +2,7 @@ const web = require('./web');
 const launcher = require('./launcher');
 const clicker = require('./clicker');
 const recorder = require('./recorder');
+const volume = require('./volume');
 
 const Automation = {
     execute: (macro) => {
@@ -21,6 +22,9 @@ const Automation = {
                 break;
             case 'recorder':
                 recorder.execute(macro);
+                break;
+            case 'volume':
+                volume.execute(macro);
                 break;
             default:
                 console.warn(`Unknown macro type: ${macro.type}`);
