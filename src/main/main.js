@@ -111,8 +111,11 @@ if (!gotTheLock) {
             mainWindow.webContents.send('init-config', { macros, theme, language, led });
 
             // Restore Knob Config on Startup
+            const knobj = macros['knob_right'];
+            console.log('[Persistence Check] Startup Knob Config:', knobj ? JSON.stringify(knobj) : 'Undefined (Using Default)');
+
             // Default to 'volume' type and active=false (Software Intercept Mode) if not set.
-            const knobMacro = macros['knob_right'] || { type: 'volume', active: false };
+            const knobMacro = knobj || { type: 'volume', active: false };
             setTimeout(() => sendKnobConfig(knobMacro), 2000); // Wait for connection
         });
     };
@@ -148,6 +151,8 @@ if (!gotTheLock) {
         // Knob Auto-Open Logic (Unassigned)
         const knobMacro = macros['knob_right'];
         const isKnobActive = knobMacro && knobMacro.active !== false && knobMacro.type === 'volume';
+
+        console.log(`[Register Shortcuts] Knob Logic: ${isKnobActive ? 'Active (Native Control)' : 'Inactive (Interception Mode)'}`);
 
         if (!isKnobActive) {
             // Register Volume Shortcuts to intercept and trigger UI

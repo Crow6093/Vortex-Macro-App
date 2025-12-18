@@ -17,8 +17,15 @@ module.exports = {
             }
 
             if (script) {
-                exec(`osascript -e "${script}"`, (error) => {
-                    if (error) console.error(`[Volume] Error: ${error.message}`);
+                console.log(`[Volume] Running osascript: ${script}`);
+                exec(`osascript -e "${script}"`, (error, stdout, stderr) => {
+                    if (error) {
+                        console.error(`[Volume] Error: ${error.message}`);
+                        return;
+                    }
+                    if (stderr) console.error(`[Volume] Stderr: ${stderr}`);
+                    if (stdout) console.log(`[Volume] Stdout: ${stdout.trim()}`);
+                    console.log(`[Volume] Success: ${action}`);
                 });
             }
         } else if (process.platform === 'win32') {
