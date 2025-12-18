@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, shell, dialog } = require('electron');
+const { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, shell, dialog, systemPreferences } = require('electron');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -18,8 +18,6 @@ if (!gotTheLock) {
             mainWindow.focus();
         }
     });
-
-
 
     if (require('electron-squirrel-startup')) {
         app.quit();
@@ -128,13 +126,23 @@ if (!gotTheLock) {
             const key = `F${i}`;
             const macro = macros[key];
 
-            if (macro && macro.type !== 'none') {
-                if (macro.active === false) return;
-
+            if (macro && macro.type !== 'none' && macro.active !== false) {
+                // Register User Macro
                 globalShortcut.register(key, () => {
                     console.log(`${key} pressed, executing macro...`);
                     Automation.execute(macro);
                     if (mainWindow) mainWindow.webContents.send('macro-triggered', key);
+                });
+            } else if (process.platform === 'darwin' && (key === 'F14' || key === 'F15')) {
+                // macOS FIX: Force register F14/F15 as "no-op" to consume the key
+                // and prevent it from triggering the default Brightness Up/Down.
+                globalShortcut.register(key, () => {
+                    console.log(`${key} blocked (consumed to prevent system default).`);
+
+                    // Feature: Auto-Select Key on Focus
+                    if (mainWindow && mainWindow.isFocused()) {
+                        mainWindow.webContents.send('externally-selected-key', key);
+                    }
                 });
             }
         }
@@ -158,7 +166,45 @@ if (!gotTheLock) {
         tray.on('double-click', () => mainWindow.show());
     };
 
+    // Permission Check Helper
+    const checkSystemPermissions = () => {
+        // macOS: Accessibility
+        if (process.platform === 'darwin') {
+            const isTrusted = systemPreferences.isTrustedAccessibilityClient(false);
+            if (!isTrusted) {
+                const warn = dialog.showMessageBoxSync({
+                    type: 'warning',
+                    title: 'Accessibility Permission Needed',
+                    message: 'To block default F14/F15 brightness keys, this app needs Accessibility permissions.',
+                    detail: 'Click "Open Settings" to grant permission. You may need to restart the app afterwards.',
+                    buttons: ['Open Settings', 'Cancel'],
+                    defaultId: 0
+                });
+                if (warn === 0) {
+                    systemPreferences.isTrustedAccessibilityClient(true);
+                }
+            }
+        }
+
+        // Linux: Check HID Access (udev)
+        if (process.platform === 'linux') {
+            try {
+                // Just try to list devices. If we don't have permissions to /dev/hidraw*, 
+                // node-hid might return empty or throw depending on the backend.
+                // Usually it returns devices but we can't open them. 
+                // We'll rely on the runtime error in open() but we can warn if HID is missing.
+                if (!HID) {
+                    dialog.showErrorBox('Dependency Error', 'node-hid failed to load. Check your system libraries (libusb).');
+                }
+            } catch (e) {
+                console.error('Linux Permission Check:', e);
+            }
+        }
+    };
+
     app.whenReady().then(() => {
+        checkSystemPermissions();
+
         createWindow();
         createTray();
         registerShortcuts();
@@ -230,8 +276,18 @@ if (!gotTheLock) {
                 d.vendorId === MACROPAD_VID &&
                 d.productId === MACROPAD_PID
             );
+
             if (matches.length > 0) {
-                // console.log(`Found ${matches.length} interfaces for device.`);
+                // Prioritize the Usage Page 0xFF60 (Raw HID)
+                matches.sort((a, b) => {
+                    const isRawA = (a.usagePage === 0xFF60 && a.usage === 0x61);
+                    const isRawB = (b.usagePage === 0xFF60 && b.usage === 0x61);
+                    if (isRawA && !isRawB) return -1;
+                    if (!isRawA && isRawB) return 1;
+                    return 0;
+                });
+
+                console.log(`[HID Scan] Found ${matches.length} interfaces. Selected: Path=${matches[0].path}, UsagePage=${matches[0].usagePage}`);
                 return matches;
             } else {
                 console.warn('No devices found with VID 0xFEED PID 0x6060');
@@ -261,8 +317,8 @@ if (!gotTheLock) {
                 }
                 return; // Success
             } catch (err) {
-                console.error('Write failed, device disconnected?', err);
-                cachedDevice.close();
+                console.error('[Write Error] Cached write failed, closing:', err.message);
+                try { cachedDevice.close(); } catch (e) { }
                 cachedDevice = null;
             }
         }
@@ -273,7 +329,27 @@ if (!gotTheLock) {
 
         try {
             // Open first match
+            console.log(`[HID Open] Opening device: ${matches[0].path}`);
             cachedDevice = new HID.HID(matches[0].path);
+
+            // --- DATA DEBUGGING LISTENER ---
+            cachedDevice.on('data', (data) => {
+                // Log incoming data to debug Knob events
+                // Data is a Buffer
+                const hex = data.toString('hex');
+                const array = [...data];
+                console.log(`[HID Data Received] Hex: ${hex} | Array: ${array.join(', ')}`);
+
+                // If this is a knob event, we'll see it here.
+                // We'll process it later for Software Volume.
+            });
+
+            cachedDevice.on('error', (err) => {
+                console.error('[HID Device Error]', err);
+                try { cachedDevice.close(); } catch (e) { }
+                cachedDevice = null;
+            });
+            // -------------------------------
 
             // Retry Write
             for (const data of packets) {
@@ -288,7 +364,7 @@ if (!gotTheLock) {
                 }
             }
         } catch (err) {
-            console.error('Failed to open/write device:', err);
+            console.error('[HID Open/Write Failed]:', err);
             if (cachedDevice) {
                 try { cachedDevice.close(); } catch (e) { }
                 cachedDevice = null;
@@ -300,19 +376,23 @@ if (!gotTheLock) {
     const sendKnobConfig = (knobData) => {
         if (!knobData) return;
 
-        // Command 0x04: Volume Control (1=Enable, 0=Disable)
-        const vol = (knobData.active !== false) ? 1 : 0;
+        try {
+            // Command 0x04: Volume Control (1=Enable, 0=Disable)
+            const vol = (knobData.active !== false) ? 1 : 0;
 
-        // Command 0x06: Mute Control (1=Enable, 0=Disable)
-        const mute = (knobData.mute !== false) ? 1 : 0;
+            // Command 0x06: Mute Control (1=Enable, 0=Disable)
+            const mute = (knobData.mute !== false) ? 1 : 0;
 
-        console.log(`Sending Knob Config: Vol=${vol} (Cmd 0x04), Mute=${mute} (Cmd 0x06)`);
+            console.log(`Sending Knob Config: Vol=${vol} (Cmd 0x04), Mute=${mute} (Cmd 0x06)`);
 
-        // Send both packets in one batch
-        writeBatch([
-            [0x04, vol],
-            [0x06, mute]
-        ]);
+            // Send both packets in one batch
+            writeBatch([
+                [0x04, vol],
+                [0x06, mute]
+            ]);
+        } catch (e) {
+            console.error('Error sending knob config:', e);
+        }
     };
 
     // State for Software Animations

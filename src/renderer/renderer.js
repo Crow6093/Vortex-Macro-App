@@ -641,6 +641,50 @@ ipcRenderer.on('device-status', (event, isConnected) => {
     }
 });
 
+// Auto-Select Key Logic (User Request)
+// Listen for IPC messages (from Main process, e.g., Mac F14/F15)
+ipcRenderer.on('externally-selected-key', (event, key) => {
+    selectKeyByKeyName(key);
+});
+
+// Listen for direct keystrokes (unassigned F-keys)
+document.addEventListener('keydown', (e) => {
+    // If we are recording a macro, do NOT interfere
+    if (isRecording) return;
+
+    // Check for F13-F24
+    if (e.key && e.key.startsWith('F')) {
+        const fNum = parseInt(e.key.substring(1));
+        if (!isNaN(fNum) && fNum >= 13 && fNum <= 24) {
+
+            // Check if this key is assigned. 
+            // If assigned, the macro executes (global or system), and we might NOT want to open the menu.
+            // User request: "clickar en el teclado real una tecla SIN ASIGNAR".
+            // So if assigned, we ignore.
+            const macro = currentMacros[e.key];
+            if (!macro || macro.type === 'none' || !macro.active) {
+                // Key is unassigned or inactive -> Select it in UI
+                selectKeyByKeyName(e.key);
+            }
+        }
+    }
+});
+
+function selectKeyByKeyName(keyName) {
+    // Find the button with this data-key
+    const btn = document.querySelector(`.key-btn[data-key="${keyName}"]`);
+    if (btn) {
+        // Trigger click logic
+        btn.click();
+
+        // Ensure panel opens (click logic usually toggles, so we might need to enforce open)
+        // btn.click handles toggle. If we want it to OPEN, we check if it closed it?
+        // Actually btn.click logic: if same key & open -> close. Else -> open.
+        // Since we are pressing a new key usually, it opens. 
+        // If we press the SAME unassigned key twice, it closes. This is acceptable behavior.
+    }
+}
+
 // Settings Logic
 const settingsBtn = document.getElementById('settings-btn');
 const settingsPanel = document.getElementById('settings-panel');
