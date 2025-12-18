@@ -59,6 +59,9 @@ if (!gotTheLock) {
         }
     };
 
+    // --- DEVICE CONNECTION MONITORING ---
+    // Checks every 2 seconds if the device is connected
+    // and sends the status to the UI (Renderer).
     setInterval(() => {
         const isConnected = checkDevice();
         if (mainWindow) mainWindow.webContents.send('device-status', isConnected);
@@ -103,6 +106,7 @@ if (!gotTheLock) {
             store.set('windowState', { width: bounds.width, height: bounds.height });
         });
 
+        // Initialize Config/State when window loads
         mainWindow.webContents.on('did-finish-load', () => {
             const macros = store.get('macros');
             const theme = store.get('theme');
@@ -111,11 +115,8 @@ if (!gotTheLock) {
             mainWindow.webContents.send('init-config', { macros, theme, language, led });
 
             // Restore Knob Config on Startup
-            const knobj = macros['knob_right'];
-            console.log('[Persistence Check] Startup Knob Config:', knobj ? JSON.stringify(knobj) : 'Undefined (Using Default)');
-
             // Default to 'volume' type and active=false (Software Intercept Mode) if not set.
-            const knobMacro = knobj || { type: 'volume', active: false };
+            const knobMacro = macros['knob_right'] || { type: 'volume', active: false };
             setTimeout(() => sendKnobConfig(knobMacro), 2000); // Wait for connection
         });
     };
@@ -129,10 +130,12 @@ if (!gotTheLock) {
             const macro = macros[key];
 
             if (macro && macro.type !== 'none' && macro.active !== false) {
-                // Register User Macro
+                // Register User Macro (Standard Key)
+                // When this F-key is pressed globally, it triggers the assigned macro.
                 globalShortcut.register(key, () => {
                     console.log(`${key} pressed, executing macro...`);
                     Automation.execute(macro);
+                    // Notify UI to show visual feedback
                     if (mainWindow) mainWindow.webContents.send('macro-triggered', key);
                 });
             } else if (process.platform === 'darwin' && (key === 'F14' || key === 'F15')) {
@@ -152,7 +155,7 @@ if (!gotTheLock) {
         const knobMacro = macros['knob_right'];
         const isKnobActive = knobMacro && knobMacro.active !== false && knobMacro.type === 'volume';
 
-        console.log(`[Register Shortcuts] Knob Logic: ${isKnobActive ? 'Active (Native Control)' : 'Inactive (Interception Mode)'}`);
+
 
         if (!isKnobActive) {
             // Register Volume Shortcuts to intercept and trigger UI
@@ -263,6 +266,9 @@ if (!gotTheLock) {
     });
     ipcMain.on('window-close', () => mainWindow.close());
 
+    // --- IPC EVENT LISTENERS (UI -> Main) ---
+
+    // Saves a macro to the persistent store and re-registers global shortcuts
     ipcMain.on('save-macro', (event, data) => {
         const macros = store.get('macros');
         macros[data.key] = data;
@@ -290,7 +296,10 @@ if (!gotTheLock) {
         store.set('led', data);
     });
 
-    // New Helper: Get All Device Interfaces
+    // --- HID (Hardware) HELPERS ---
+
+    // Scans for the specific supported device (VID: 0xFEED, PID: 0x6060)
+    // Returns the correct interface (Raw HID) if found.
     const getAllDevices = () => {
         if (!HID) {
             console.error('HID not loaded');
@@ -314,7 +323,6 @@ if (!gotTheLock) {
                     return 0;
                 });
 
-                // console.log(`[HID Scan] Found ${matches.length} interfaces. Selected: Path=${matches[0].path}, UsagePage=${matches[0].usagePage}`);
                 return matches;
             } else {
                 console.warn('No devices found with VID 0xFEED PID 0x6060');

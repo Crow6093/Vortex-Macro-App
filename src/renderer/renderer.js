@@ -17,13 +17,19 @@ const macroTypeSelect = document.getElementById('macro-type');
 const saveBtn = document.getElementById('save-macro-btn');
 
 // Initialize Config
+// --- INITIALIZATION ---
+// Receives the initial configuration (Macros, Theme, Language) from Main process
 ipcRenderer.on('init-config', (event, config) => {
     currentMacros = config.macros || {};
     const language = config.language || 'en';
     const theme = config.theme || 'dark';
+
+    // Apply Theme
     document.body.setAttribute('data-theme', theme);
     const themeSelector = document.getElementById('theme-selector-floating');
     if (themeSelector) themeSelector.value = theme;
+
+    // Apply Language and Visuals
     changeLanguage(language);
     updateKeyVisuals();
     checkEmptyState();
@@ -226,6 +232,9 @@ const macroIcons = {
     recorder: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3" fill="currentColor"></circle></svg>` // Record/Dot
 };
 
+// --- KEY VISUALS UPDATER ---
+// Updates the visual appearance of the grid keys based on assigned macros.
+// Adds icons and tooltips to show what each key does.
 function updateKeyVisuals() {
     keys.forEach(key => {
         const k = key.dataset.key;
@@ -329,6 +338,9 @@ if (closeVolumeBtn) {
     });
 }
 
+// --- VOLUME / KNOB HANDLING ---
+// Handles the top-right visual element which represents the knob.
+// Clicking it opens the Volume Control panel.
 if (saveVolumeBtn) {
     saveVolumeBtn.addEventListener('click', () => {
         const isActive = volumeToggle.checked;
@@ -629,6 +641,8 @@ ipcRenderer.on('macro-saved-success', (event, data) => {
 const statusLight = document.getElementById('device-status-light');
 const overlay = document.getElementById('disconnected-overlay');
 
+// --- DEVICE DISCONNECTION HANDLER ---
+// Shows/Hides the "Connect Device" overlay based on hardware status.
 ipcRenderer.on('device-status', (event, isConnected) => {
     const light = statusLight || document.getElementById('device-status-light');
 
@@ -797,6 +811,7 @@ function updateUIFromState() {
         }
 
         // Feature Request: Hide User/Factory Presets in Circular Mode (Vortex)
+        // Keep interface clean for specific modes
         const userPresets = document.getElementById('user-presets-section');
         const factoryPresets = document.getElementById('factory-presets-section');
         if (userPresets) userPresets.style.display = isVortex ? 'none' : 'block';
@@ -885,8 +900,8 @@ function updateVirtualKeyboardColor() {
 let ledUpdateTimer = null;
 
 function sendLedUpdate() {
-    // Immediate UI update for responsiveness
-    // But throttle HID commands
+    // Debounce: Prevents flooding the device with HID commands when dragging sliders
+    // Limits updates to roughly 20 times per second.
     if (ledUpdateTimer) clearTimeout(ledUpdateTimer);
 
     ledUpdateTimer = setTimeout(() => {
