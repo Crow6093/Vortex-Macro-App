@@ -315,8 +315,8 @@ if (topRightVisual) {
             volumeToggle.checked = knobMacro.active !== false;
             volumeMuteToggle.checked = knobMacro.mute !== false; // Default true if undefined/missing
         } else {
-            // Default to enabled if not set
-            volumeToggle.checked = true;
+            // Default to DISABLED if not set (User Request)
+            volumeToggle.checked = false;
             volumeMuteToggle.checked = true;
         }
     });
@@ -645,6 +645,17 @@ ipcRenderer.on('device-status', (event, isConnected) => {
 // Listen for IPC messages (from Main process, e.g., Mac F14/F15)
 ipcRenderer.on('externally-selected-key', (event, key) => {
     selectKeyByKeyName(key);
+});
+
+// Auto-Select Knob Logic
+ipcRenderer.on('externally-selected-knob', () => {
+    const knobVisual = document.getElementById('top-right-visual');
+    const volumePanel = document.getElementById('volume-panel');
+
+    // Open only if not already open
+    if (knobVisual && volumePanel && !volumePanel.classList.contains('open')) {
+        knobVisual.click();
+    }
 });
 
 // Listen for direct keystrokes (unassigned F-keys)

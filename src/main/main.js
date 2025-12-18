@@ -111,10 +111,9 @@ if (!gotTheLock) {
             mainWindow.webContents.send('init-config', { macros, theme, language, led });
 
             // Restore Knob Config on Startup
-            const knobMacro = macros['knob_right'];
-            if (knobMacro && knobMacro.type === 'volume') {
-                setTimeout(() => sendKnobConfig(knobMacro), 2000); // Wait for connection
-            }
+            // Default to 'volume' type and active=false (Software Intercept Mode) if not set.
+            const knobMacro = macros['knob_right'] || { type: 'volume', active: false };
+            setTimeout(() => sendKnobConfig(knobMacro), 2000); // Wait for connection
         });
     };
 
@@ -139,12 +138,31 @@ if (!gotTheLock) {
                 globalShortcut.register(key, () => {
                     console.log(`${key} blocked (consumed to prevent system default).`);
 
-                    // Feature: Auto-Select Key on Focus
                     if (mainWindow && mainWindow.isFocused()) {
                         mainWindow.webContents.send('externally-selected-key', key);
                     }
                 });
             }
+        }
+
+        // Knob Auto-Open Logic (Unassigned)
+        const knobMacro = macros['knob_right'];
+        const isKnobActive = knobMacro && knobMacro.active !== false && knobMacro.type === 'volume';
+
+        if (!isKnobActive) {
+            // Register Volume Shortcuts to intercept and trigger UI
+            ['VolumeUp', 'VolumeDown', 'VolumeMute'].forEach(volKey => {
+                try {
+                    globalShortcut.register(volKey, () => {
+                        console.log(`${volKey} intercepted (Knob Auto-Open).`);
+                        if (mainWindow && mainWindow.isFocused()) {
+                            mainWindow.webContents.send('externally-selected-knob');
+                        }
+                    });
+                } catch (e) {
+                    console.error('Failed to register volume shortcut:', e);
+                }
+            });
         }
     };
 
@@ -374,16 +392,16 @@ if (!gotTheLock) {
 
     // New Helper: Send Knob Configuration (Command 0x04 & 0x06)
     const sendKnobConfig = (knobData) => {
-        if (!knobData) return;
+        // Even if knobData is missing or active=false, we generally want the firmware to SEND the keys
+        // so we can intercept them in software (to show the menu).
+        // If we sent '0', the firmware would go silent (or Raw), and our globalShortcuts wouldn't trigger.
+        // So we ALWAYS enable the hardware keys (1), and manage the "Disable" state by Intercepting them in `registerShortcuts`.
 
         try {
-            // Command 0x04: Volume Control (1=Enable, 0=Disable)
-            const vol = (knobData.active !== false) ? 1 : 0;
+            const vol = 1; // Always Enable HW Keys
+            const mute = 1; // Always Enable HW Keys
 
-            // Command 0x06: Mute Control (1=Enable, 0=Disable)
-            const mute = (knobData.mute !== false) ? 1 : 0;
-
-            console.log(`Sending Knob Config: Vol=${vol} (Cmd 0x04), Mute=${mute} (Cmd 0x06)`);
+            console.log(`Sending Knob Config: Vol=${vol} (Cmd 0x04), Mute=${mute} (Cmd 0x06) (Force Enabled for App Control)`);
 
             // Send both packets in one batch
             writeBatch([
